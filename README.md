@@ -27,7 +27,7 @@ git clone <your-repo-url>
 # Move into the project folder
 cd <repo-name>
 
-## **Install Dependencies**
+## Install Dependencies
 
 # Install backend dependencies
 cd api
@@ -37,7 +37,7 @@ npm install
 cd ../web
 npm install
 
-## **Environment Setup**
+## Environment Setup
 We use .env files to store environment variables.
 Example files are already provided as .env.example.
 
@@ -63,7 +63,7 @@ Open web/.env and confirm:
 
 VITE_API_BASE_URL=http://localhost:3000
 
-## **Running the Apps**
+## Running the Apps
 Open two terminals (one for API, one for Web).
 
 Terminal 1 – Start backend (API):
@@ -74,7 +74,7 @@ Terminal 2 – Start frontend (Web):
 cd web
 npm run dev
 
-## **Common Issues**
+## Common Issues
 
 Port already in use
 Stop other processes on 3000 or 5173, then retry.
