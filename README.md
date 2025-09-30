@@ -19,13 +19,16 @@ Before you start, install the following:
   👉 To clone and manage the repository.  
 
 ## Clone the Repository
-#Clone the project
+```
+# Clone the project
 git clone <your-repo-url>
 
 # Move into the project folder
 cd <repo-name>
+```
 
 ## Install Dependencies
+```
 # Install backend dependencies
 cd api
 npm install
@@ -33,9 +36,10 @@ npm install
 # Install frontend dependencies
 cd ../web
 npm install
+```
 
 ## Environment Setup
-
+```
 We use .env files to store environment variables.
 Example files are already provided as .env.example.
 
@@ -54,8 +58,10 @@ Step 2: Update values
 api/.env → fill in DATABASE_URL, JWT secrets, SMTP if needed.
 
 web/.env → confirm VITE_API_BASE_URL=http://localhost:3000.
+```
 
 ## Running the Apps
+```
 Terminal 1 – Backend:
 cd api
 npm run dev
@@ -67,9 +73,10 @@ npm run dev
 API → http://localhost:3000
 
 Web → http://localhost:5173
+```
 
 ## Common Issues
-
+```
 Port in use: Stop other processes on 3000 or 5173.
 
 Database error: Ensure Postgres is running and URL is correct.
@@ -77,3 +84,4 @@ Database error: Ensure Postgres is running and URL is correct.
 Node modules issue:
 rm -rf node_modules package-lock.json
 npm install
+```
