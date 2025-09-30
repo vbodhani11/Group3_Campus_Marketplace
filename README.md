@@ -85,3 +85,6 @@ Node modules issue:
 rm -rf node_modules package-lock.json
 npm install
 ```
+## .gitignore notes
+Note: Never commit `.env` files.  
+Use `.env.example` to share required keys. Keep real values only on your machine.
