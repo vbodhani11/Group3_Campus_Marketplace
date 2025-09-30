@@ -19,7 +19,7 @@ Before you start, install the following:
   👉 To clone and manage the repository.  
 
 ## Clone the Repository
-**Clone the project**
+#Clone the project
 git clone <your-repo-url>
 
 # Move into the project folder
