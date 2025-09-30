@@ -19,8 +19,6 @@ Before you start, install the following:
   👉 To clone and manage the repository.  
 
 ## Clone the Repository
-
-```bash
 # Clone the project
 git clone <your-repo-url>
 
@@ -28,7 +26,6 @@ git clone <your-repo-url>
 cd <repo-name>
 
 ## Install Dependencies
-
 # Install backend dependencies
 cd api
 npm install
@@ -38,52 +35,45 @@ cd ../web
 npm install
 
 ## Environment Setup
+
 We use .env files to store environment variables.
 Example files are already provided as .env.example.
 
-**Step 1: Copy the example files -**
-macOS:
+Step 1: Copy the example files
+macOS/Linux:
+
 cp api/.env.example api/.env
 cp web/.env.example web/.env
 
-Windows:
+Windows (PowerShell):
+
 copy api\.env.example api\.env
 copy web\.env.example web\.env
 
-**Step 2: Update values**
-Open api/.env and update:
+Step 2: Update values
+api/.env → fill in DATABASE_URL, JWT secrets, SMTP if needed.
 
-DATABASE_URL → your local Postgres connection string.
-
-JWT_ACCESS_SECRET / JWT_REFRESH_SECRET → generate strong random strings.
-
-SMTP values if email is needed.
-
-Open web/.env and confirm:
-
-VITE_API_BASE_URL=http://localhost:3000
+web/.env → confirm VITE_API_BASE_URL=http://localhost:3000.
 
 ## Running the Apps
-Open two terminals (one for API, one for Web).
-
-Terminal 1 – Start backend (API):
+Terminal 1 – Backend:
 cd api
 npm run dev
 
-Terminal 2 – Start frontend (Web):
+Terminal 2 – Frontend:
 cd web
 npm run dev
 
+API → http://localhost:3000
+
+Web → http://localhost:5173
+
 ## Common Issues
 
-Port already in use
-Stop other processes on 3000 or 5173, then retry.
+Port in use: Stop other processes on 3000 or 5173.
 
-Database connection failed
-Ensure PostgreSQL is running and DATABASE_URL is correct.
+Database error: Ensure Postgres is running and URL is correct.
 
-Node modules error
-Delete old modules and reinstall:
-
+Node modules issue:
 rm -rf node_modules package-lock.json
 npm install
