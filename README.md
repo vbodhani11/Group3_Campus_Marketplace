@@ -57,7 +57,7 @@ copy web\.env.example web\.env
 Step 2: Update values
 api/.env → fill in DATABASE_URL, JWT secrets, SMTP if needed.
 
-web/.env → confirm VITE_API_BASE_URL=http://localhost:3000.
+web/.env → confirm VITE_API_BASE_URL=http://localhost:5173.
 ```
 
 ## Running the Apps
