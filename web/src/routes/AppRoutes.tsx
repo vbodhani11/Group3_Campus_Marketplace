@@ -1,22 +1,21 @@
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import Home from "../pages/Home";
-import About from "../pages/About";
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
+import Login from '../pages/Login'
+import Account from '../pages/Account'
+import ForgotPassword from "../pages/ForgotPassword"
+import Listings from "../pages/Listings"
+import Sell from "../pages/Sell"
+import Messages from "../pages/Messages"
+
+const router = createBrowserRouter([
+  { path: '/', element: <Navigate to="/login" replace /> },
+  { path: '/login', element: <Login /> },
+  { path: '/account', element: <Account /> },
+  { path: "/forgot-password", element: <ForgotPassword /> },
+  { path: "/listings", element: <Listings /> },
+  { path: "/sell", element: <Sell /> },
+  { path: "/messages", element: <Messages /> },
+])
 
 export default function AppRoutes() {
-  return (
-    <BrowserRouter>
-      <nav className="flex justify-center gap-6 p-4 bg-gray-100 shadow">
-        <Link className="text-blue-600 font-semibold hover:underline" to="/">
-          Home
-        </Link>
-        <Link className="text-blue-600 font-semibold hover:underline" to="/about">
-          About
-        </Link>
-      </nav>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-      </Routes>
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />
 }
