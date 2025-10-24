@@ -1,98 +1,183 @@
-import { useState } from 'react'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
-import Layout from '../layout/Layout'
-import { signIn } from '../lib/auth'
+import { useState } from "react"
+import Layout from "../layout/Layout"
+import { Link } from "react-router-dom"
 
 export default function Login() {
-  const navigate = useNavigate()
-  const location = useLocation() as any
-  const from = location.state?.from ?? '/account'
+  const [mode, setMode] = useState<"login" | "signup">("login")
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [show, setShow] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // login fields
+  const [loginEmail, setLoginEmail] = useState("")
+  const [showLoginPass, setShowLoginPass] = useState(false)
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
-    try {
-      await signIn(email.trim(), password)
-      navigate(from, { replace: true })
-    } catch (err: any) {
-      setError(err?.message ?? 'Unable to sign in. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // signup fields
+  const [signupName, setSignupName] = useState("")
+  const [signupEmail, setSignupEmail] = useState("")
+  const [showSignupPass, setShowSignupPass] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   return (
-    <Layout title="Login" full>
-    {/* <div className="pfw-card" style={{ maxWidth: 440, margin: '0 auto' }}> */}
-    <div className="pfw-auth">{/* ✅ add this wrapper */}
-   {/* <div className="pfw-card" style={{ maxWidth: 500, width: '100%', margin: '0 auto' }}> */}
-    <div className="pfw-card" style={{ maxWidth: 640 }}> 
-        <div className="pfw-card__body">
-          <form onSubmit={onSubmit} noValidate>
-            <div className="pfw-field">
-              <label className="pfw-label" htmlFor="email">Email</label>
-              <input
-                id="email"
-                className="pfw-input"
-                type="email"
-                placeholder="you@pfw.edu"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                autoComplete="email"
-                required
-              />
-              <div className="pfw-help">Use your campus or personal email.</div>
-            </div>
-
-            <div className="pfw-field">
-              <label className="pfw-label" htmlFor="password">Password</label>
-              <div style={{ position:'relative' }}>
-                <input
-                  id="password"
-                  className="pfw-input"
-                  type={show ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShow(s => !s)}
-                  className="pfw-btn pfw-btn--outline"
-                  style={{ position:'absolute', right:6, top:6, padding:'6px 10px' }}
-                  aria-label={show ? 'Hide password' : 'Show password'}
-                >
-                  {show ? 'Hide' : 'Show'}
-                </button>
-              </div>
-              <div className="pfw-help">At least 6 characters.</div>
-            </div>
-
-            {error && <div className="pfw-error" role="alert">{error}</div>}
-
-            <div className="pfw-form-actions">
-              <button className="pfw-btn pfw-btn--primary" type="submit" disabled={loading}>
-                {loading ? 'Signing in…' : 'Continue'}
+    <Layout title={mode === "login" ? "Login" : "Create Account"}>
+      <div className="pfw-auth">
+        <div className="pfw-card" style={{ maxWidth: 520, width: "100%" }}>
+          <div className="pfw-card__body">
+            {/* Tabs */}
+            <div className="auth-tabs">
+              <button
+                type="button"
+                onClick={() => setMode("login")}
+                className={`pfw-btn ${mode === "login" ? "pfw-btn--gold" : "pfw-btn--outline"}`}
+              >
+                Login
               </button>
-              <Link className="pfw-btn pfw-btn--outline" to="/listings">Back to Listings</Link>
+              <button
+                type="button"
+                onClick={() => setMode("signup")}
+                className={`pfw-btn ${mode === "signup" ? "pfw-btn--gold" : "pfw-btn--outline"}`}
+              >
+                Sign Up
+              </button>
             </div>
 
-            <div style={{ marginTop: 12, fontSize: 13 }}>
-                <a href="/forgot-password">Forgot password?</a>
-            </div>
+            {mode === "login" ? (
+              <form noValidate>
+                {/* Email */}
+                <div className="pfw-field">
+                  <label className="pfw-label" htmlFor="login-email">Email</label>
+                  <input
+                    id="login-email"
+                    type="email"
+                    className="pfw-input"
+                    placeholder="you@pfw.edu"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    autoComplete="email"
+                    required
+                  />
+                </div>
 
-          </form>
+                {/* Password */}
+                <div className="pfw-field" style={{ position: "relative" }}>
+                  <label className="pfw-label" htmlFor="login-password">Password</label>
+                  <input
+                    id="login-password"
+                    type={showLoginPass ? "text" : "password"}
+                    className="pfw-input"
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPass(v => !v)}
+                    style={{ position: "absolute", right: 12, top: 38, background: "none", border: 0, cursor: "pointer", color: "#666", fontSize: 13 }}
+                  >
+                    {showLoginPass ? "Hide" : "Show"}
+                  </button>
+                </div>
+
+                <div className="pfw-form-actions">
+                  <button type="submit" className="pfw-btn pfw-btn--primary">Login</button>
+                  <Link to="/forgot-password" className="pfw-btn pfw-btn--outline">Forgot password?</Link>
+                </div>
+
+                {/* Inline fallback link so Sign Up is ALWAYS reachable */}
+                <div className="auth-inline">
+                  <span>Don’t have an account?</span>
+                  <button type="button" className="pfw-link" onClick={() => setMode("signup")}>
+                    Sign up
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form noValidate>
+                {/* Full Name */}
+                <div className="pfw-field">
+                  <label className="pfw-label" htmlFor="signup-name">Full Name</label>
+                  <input
+                    id="signup-name"
+                    type="text"
+                    className="pfw-input"
+                    placeholder="Jane Doe"
+                    value={signupName}
+                    onChange={(e) => setSignupName(e.target.value)}
+                    autoComplete="name"
+                    required
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="pfw-field">
+                  <label className="pfw-label" htmlFor="signup-email">Email</label>
+                  <input
+                    id="signup-email"
+                    type="email"
+                    className="pfw-input"
+                    placeholder="you@pfw.edu"
+                    value={signupEmail}
+                    onChange={(e) => setSignupEmail(e.target.value)}
+                    autoComplete="email"
+                    required
+                  />
+                </div>
+
+                {/* Password */}
+                <div className="pfw-field" style={{ position: "relative" }}>
+                  <label className="pfw-label" htmlFor="signup-password">Password</label>
+                  <input
+                    id="signup-password"
+                    type={showSignupPass ? "text" : "password"}
+                    className="pfw-input"
+                    placeholder="Create a password"
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignupPass(v => !v)}
+                    style={{ position: "absolute", right: 12, top: 38, background: "none", border: 0, cursor: "pointer", color: "#666", fontSize: 13 }}
+                  >
+                    {showSignupPass ? "Hide" : "Show"}
+                  </button>
+                </div>
+
+                {/* Confirm Password */}
+                <div className="pfw-field" style={{ position: "relative" }}>
+                  <label className="pfw-label" htmlFor="signup-confirm">Confirm Password</label>
+                  <input
+                    id="signup-confirm"
+                    type={showConfirm ? "text" : "password"}
+                    className="pfw-input"
+                    placeholder="Re-enter password"
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(v => !v)}
+                    style={{ position: "absolute", right: 12, top: 38, background: "none", border: 0, cursor: "pointer", color: "#666", fontSize: 13 }}
+                  >
+                    {showConfirm ? "Hide" : "Show"}
+                  </button>
+                </div>
+
+                <div className="pfw-form-actions">
+                  <button type="submit" className="pfw-btn pfw-btn--primary">Create Account</button>
+                  <button type="button" className="pfw-btn pfw-btn--outline" onClick={() => setMode("login")}>
+                    Back to Login
+                  </button>
+                </div>
+
+                {/* Inline fallback link so Login is ALWAYS reachable */}
+                <div className="auth-inline">
+                  <span>Already have an account?</span>
+                  <button type="button" className="pfw-link" onClick={() => setMode("login")}>
+                    Log in
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
-      </div>
       </div>
     </Layout>
   )

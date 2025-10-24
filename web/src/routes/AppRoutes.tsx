@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
-import Login from '../pages/Login1'
+import Login from '../pages/Login'
 import Account from '../pages/Account'
 import ForgotPassword from "../pages/ForgotPassword"
 import Listings from "../pages/Listings"
