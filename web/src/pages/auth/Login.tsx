@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../../lib/supabaseClient";
 import "../../style/Login.scss";
 
 export default function Login() {
@@ -8,10 +9,28 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (role === "student") navigate("/student/home");
-    else navigate("/admin/dashboard");
+
+    // fetch user from Supabase by email and password
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email)
+      .eq("password", password)
+      .single();
+
+    if (error || !data) {
+      alert("Invalid email or password");
+      return;
+    }
+
+    // check role
+    if (data.role === "admin") {
+      navigate("/admin/dashboard");
+    } else {
+      navigate("/student/home");
+    }
   };
 
   return (
@@ -52,6 +71,13 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+
+          <p
+            className="forgot-password-link"
+            onClick={() => navigate("/forgot-password")}
+          >
+            Forgot Password?
+          </p>
 
           <button type="submit" className="login-btn">
             Log In

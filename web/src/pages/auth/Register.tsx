@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../../lib/supabaseClient";
 import "../../style/Register.scss";
 
 export default function Register() {
@@ -9,7 +10,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
@@ -17,8 +18,17 @@ export default function Register() {
       return;
     }
 
-    // TODO: Connect this to Supabase or backend later
-    navigate("/login");
+    const { error } = await supabase
+      .from("users")
+      .insert([{ full_name: name, email, password }]);
+
+    if (error) {
+      console.error(error);
+      alert("Error saving data: " + error.message);
+    } else {
+      alert("Registration successful!");
+      navigate("/login");
+    }
   };
 
   return (
@@ -77,6 +87,10 @@ export default function Register() {
 
         <button className="back-btn" onClick={() => navigate("/login")}>
           Already have an account? Log In
+        </button>
+
+        <button className="back-btn" onClick={() => navigate("/")}>
+          Back to Landing Page
         </button>
       </div>
     </div>
