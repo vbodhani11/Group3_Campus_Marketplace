@@ -1,0 +1,122 @@
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+.landing-page {
+  font-family: "Inter", sans-serif;
+  color: #333;
+  background: none; 
+  margin: 0;
+  padding: 0;
+}
+
+.hero {
+  position: relative;
+  background: url("../assets/Mastadon.jpg") center/cover no-repeat;
+  width: 100%;
+  height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .hero-content {
+    position: relative;
+    text-align: center;
+    max-width: 700px;
+    z-index: 2;
+
+    h1 {
+      font-size: 4rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      animation: fadeDown 1.2s ease-in;
+    }
+
+    p {
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
+      animation: fadeDown 1.5s ease-in;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+
+      .btn {
+        padding: 0.8rem 1.6rem;
+        font-size: 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        opacity: 0;
+        transform: translateY(20px);
+        animation: slideUp 1s ease-out forwards;
+      }
+
+      .login {
+        background: #d4b483;
+        color: #000;
+        border: none;
+        animation-delay: 0.3s;
+      }
+
+      .signup {
+        background: transparent;
+        border: 2px solid white;
+        color: white;
+        animation-delay: 0.5s;
+      }
+
+      .btn:hover {
+        opacity: 0.9;
+        transform: scale(1.05);
+      }
+    }
+  }
+}
+
+@keyframes slideUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.features {
+  text-align: center;
+  padding: 5rem 2rem;
+  background: #f5f3ef;
+
+  h2 {
+    font-size: 2rem;
+    color: #444;
+    margin-bottom: 3rem;
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    justify-items: center;
+  }
+}

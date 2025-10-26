@@ -1,5 +1,5 @@
 import { useState, useRef } from "react"
-import Layout from "../layout/Layout"
+import Layout from "../../layout/Layout"
 
 type Condition = "New" | "Like New" | "Good" | "Fair"
 

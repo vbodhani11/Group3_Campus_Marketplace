@@ -1,5 +1,5 @@
-import Layout from '../layout/Layout'
-import { getUser, signOut } from '../lib/auth'
+import Layout from '../../layout/Layout'
+import { getUser, signOut } from '../../lib/auth'
 import { useNavigate } from 'react-router-dom'
 
 export default function Account() {
