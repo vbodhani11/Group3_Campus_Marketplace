@@ -1,21 +1,18 @@
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
-import Login from '../pages/Login'
-import Account from '../pages/Account'
-import ForgotPassword from "../pages/ForgotPassword"
-import Listings from "../pages/Listings"
-import Sell from "../pages/Sell"
-import Messages from "../pages/Messages"
-
-const router = createBrowserRouter([
-  { path: '/', element: <Navigate to="/login" replace /> },
-  { path: '/login', element: <Login /> },
-  { path: '/account', element: <Account /> },
-  { path: "/forgot-password", element: <ForgotPassword /> },
-  { path: "/listings", element: <Listings /> },
-  { path: "/sell", element: <Sell /> },
-  { path: "/messages", element: <Messages /> },
-])
+import { Routes, Route } from "react-router-dom";
+import LandingPage from "../pages/LandingPage";
+import Login from "../pages/auth/Login";
+import AdminDashboard from "../pages/admin/AdminDashboard";
+import StudDashboard from "../pages/student/StudDashboard";
+import Register from "../pages/auth/Register";
 
 export default function AppRoutes() {
-  return <RouterProvider router={router} />
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/admin/AdminDashboard" element={<AdminDashboard />} />
+      <Route path="/student/StudDashboard" element={<StudDashboard />} />
+      <Route path="/Register" element={<Register />} />
+    </Routes>
+  );
 }

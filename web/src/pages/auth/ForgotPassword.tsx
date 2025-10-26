@@ -1,5 +1,5 @@
 import { useState } from "react"
-import Layout from "../layout/Layout"
+import Layout from "../../layout/Layout"
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("")
