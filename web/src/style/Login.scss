@@ -150,3 +150,19 @@ form {
     color: #000;
   }
 }
+
+.forgot-password-link {
+  text-align: right;
+  margin-top: 0.4rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: #c3a26c;
+  cursor: pointer;
+  transition: 0.2s;
+
+  &:hover {
+    color: #a5854d;
+    text-decoration: underline;
+  }
+}
+
