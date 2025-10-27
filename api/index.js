@@ -2,11 +2,21 @@ const express = require("express");
 const {Pool} = require("pg");
 const dotenv = require("dotenv");
 const {buildSignupSchema} = require("./validators/signupSchema");
+const cors =  require('cors');
 
 dotenv.config();
 
+const ORIGIN = 'http://localhost:5173';   //  TODO: Change to ENV value
+
 const app = express();
 app.use(express.json());  
+
+app.use(cors({
+  origin: ORIGIN,
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+  //credentials: true,
+}));
 
 // DB pool
 const pool = new Pool({
