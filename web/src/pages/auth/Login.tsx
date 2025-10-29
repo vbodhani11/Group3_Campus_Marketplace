@@ -1,35 +1,62 @@
+// web/src/pages/auth/Login.tsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import "../../style/Login.scss";
 
+type Role = "student" | "admin";
+
 export default function Login() {
-  const [role, setRole] = useState<"student" | "admin">("student");
+  const [role, setRole] = useState<Role>("student");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
 
-    // fetch user from Supabase by email and password
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("email", email)
-      .eq("password", password)
-      .single();
+    try {
+      // Look up the user in the custom users table
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", email)
+        .eq("password", password) 
+        .single();
 
-    if (error || !data) {
-      alert("Invalid email or password");
-      return;
-    }
+      if (error || !data) {
+        alert("Invalid email or password");
+        return;
+      }
 
-    // check role
-    if (data.role === "admin") {
-      navigate("/admin/dashboard");
-    } else {
-      navigate("/student/home");
+      // if the tab says "admin", we can double-check role matches
+      if (role === "admin" && data.role !== "admin") {
+        alert("This account is not an admin.");
+        return;
+      }
+
+      // Persist a lightweight session for the UI (sidebar, etc.)
+      localStorage.setItem(
+        "cm_user",
+        JSON.stringify({
+          id: data.id,                // uuid/string
+          email: data.email,          // string
+          full_name: data.full_name,  // string
+          role: data.role,            // "admin" | "student"
+        })
+      );
+
+      // Route by role
+      if (data.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/student/dashboard", { replace: true });
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -40,12 +67,14 @@ export default function Login() {
           <button
             className={role === "student" ? "active" : ""}
             onClick={() => setRole("student")}
+            type="button"
           >
             Student
           </button>
           <button
             className={role === "admin" ? "active" : ""}
             onClick={() => setRole("admin")}
+            type="button"
           >
             Admin
           </button>
@@ -60,6 +89,7 @@ export default function Login() {
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="username"
             required
           />
 
@@ -69,6 +99,7 @@ export default function Login() {
             placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
             required
           />
 
@@ -79,19 +110,19 @@ export default function Login() {
             Forgot Password?
           </p>
 
-          <button type="submit" className="login-btn">
-            Log In
+          <button type="submit" className="login-btn" disabled={submitting}>
+            {submitting ? "Logging in..." : "Log In"}
           </button>
         </form>
 
         <div className="divider">OR</div>
 
-        <button className="google-btn">
+        <button className="google-btn" type="button">
           <img src="/Google-icon.jpeg" alt="Google" />
           Sign in with Google
         </button>
 
-        <button className="back-btn" onClick={() => navigate("/")}>
+        <button className="back-btn" onClick={() => navigate("/")} type="button">
           Back to Landing Page
         </button>
       </div>
