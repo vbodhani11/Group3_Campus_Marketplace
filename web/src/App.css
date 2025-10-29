@@ -40,3 +40,12 @@
 .read-the-docs {
   color: #888;
 }
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: #f7f5f0;
+  color: #1f2937;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+a { color: inherit; text-decoration: none; }

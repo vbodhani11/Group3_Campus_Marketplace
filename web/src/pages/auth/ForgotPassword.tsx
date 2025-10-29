@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
-import "../../style/Login.scss"; // reuse the same card style
+import "../../style/Login.scss"; 
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -12,7 +12,7 @@ export default function ForgotPassword() {
 
     // Supabase built-in reset password method
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "http://localhost:5173/reset-password", // update later for production
+      redirectTo: "http://localhost:5173/reset-password", // Adjust as needed
     });
 
     if (error) {

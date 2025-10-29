@@ -4,7 +4,6 @@ import { NavLink } from 'react-router-dom'
 type Props = {
   title?: string
   children: ReactNode
-  /** when true, header/title/content/footer stretch full width */
   full?: boolean
 }
 

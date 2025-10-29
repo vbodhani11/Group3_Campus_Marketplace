@@ -1,0 +1,41 @@
+@use "./_theme.scss" as *; 
+
+.admin-profile {
+  input:disabled { background: $bg; color: #6b6b6b; }
+
+  display: grid; grid-template-columns: minmax(0,1fr); gap: 16px;
+
+  .card { @extend .card; }
+
+  .form { display: grid; gap: 16px; }
+
+  .avatar-row { display: flex; align-items: center; gap: 14px;
+    .avatar { width: 76px; height: 76px; border-radius: 999px; object-fit: cover; border: 2px solid #f0ede6; }
+    .upload { position: relative; padding: 8px 12px; border: 1px solid #e5e1d7; border-radius: 10px; cursor: pointer; font-weight: 600; color: #57534e;
+      input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+      &:hover { background: #faf8f4; }
+    }
+  }
+
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px;
+    @media (max-width: 720px){ grid-template-columns: 1fr; }
+  }
+
+  .field { display: grid; gap: 6px;
+    label { font-size: .9rem; color: #444; font-weight: 600; }
+    input { border: 1px solid #ddd; border-radius: 10px; padding: 10px 12px; font-size: .95rem;
+      &:disabled { background: $bg; color: #6b6b6b; }
+      &:focus { outline: none; border-color: $brand; box-shadow: 0 0 0 3px rgba(212,180,131,.2); }
+    }
+    .muted { color: #8a8a8a; font-size: .8rem; }
+    .linklike { background: none; border: none; color: $brand-600; text-align: left; padding: 0; cursor: pointer; font-weight: 700;
+      &:hover { text-decoration: underline; color: $brand; }
+    }
+  }
+
+  .actions { display: flex; gap: 10px;
+    .btn { padding: 10px 16px; border-radius: 10px; font-weight: 700; border: 1px solid transparent; cursor: pointer; }
+    .primary { background: $brand; color: #000; &:hover { background: $brand-600; } &:disabled { opacity: .7; cursor: default; } }
+    .ghost   { background: #fff; border-color: #e7e3da; &:hover { background: #faf8f4; } }
+  }
+}
