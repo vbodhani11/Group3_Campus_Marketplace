@@ -1,8 +1,19 @@
 @use "./_theme.scss" as *;
 
 .admin-shell { background: $bg; min-height: 100vh; display: flex; flex-direction: column; }
-.admin-frame { position: relative; min-height: calc(100vh - 64px); }
-.admin-main  { padding: 24px 28px; }
+
+/* acts like the body area between header and footer */
+.admin-frame, .admin-body {        /* keep .admin-body as an alias if you ever use it */
+  display: flex;
+  flex: 1 1 auto;
+  min-height: calc(100vh - 64px);  /* your header is 64px */
+}
+
+/* main content area that should expand */
+.admin-main, .admin-content {      /* alias for consistency with other code */
+  flex: 1 1 auto;
+  padding: 24px 28px;              /* you already had this */
+}
 
 /* overlay shown when sidebar is open */
 .portal-overlay {
