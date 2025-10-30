@@ -17,7 +17,10 @@ import Settings from "../pages/admin/Settings";
 import AdminProfile from "../pages/admin/AdminProfile";
 
 // student
-import StudDashboard from "../pages/student/StudDashboard";
+import StudDashboard from "../pages/student/Listings";
+import Sell from "../pages/student/Sell";
+import Messages from "../pages/student/Messages";
+import Account from "../pages/student/Account";
 
 export default function AppRoutes() {
   return (
@@ -40,8 +43,11 @@ export default function AppRoutes() {
       </Route>
 
       {/* student */}
-      <Route path="/student" element={<Navigate to="/student/dashboard" replace />} />
+      <Route path="/student" element={<Navigate to="/student/Listings" replace />} />
       <Route path="/student/dashboard" element={<StudDashboard />} />
+      <Route path="/student/Sell" element={<Sell />} />
+      <Route path="/student/Messages" element={<Messages />} />
+      <Route path="/student/Account" element={<Account />} />
 
       {/* 404 */}
       <Route path="*" element={<div style={{ padding: 20 }}>Not Found</div>} />

@@ -1,3 +1,4 @@
+import "../../style/theme.css"
 import { useState, useRef } from "react"
 import Layout from "../../layout/Layout"
 
