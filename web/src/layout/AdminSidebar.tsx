@@ -93,7 +93,7 @@ export default function AdminSidebar({ open, onClose }: Props) {
               Users
             </NavLink>
             <NavLink to="/admin/manage-listings" onClick={closeOnClick} className="navitem">
-              Content
+              Listings
             </NavLink>
             <NavLink to="/admin/analytics" onClick={closeOnClick} className="navitem">
               Analytics
