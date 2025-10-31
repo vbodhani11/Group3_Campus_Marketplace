@@ -43,11 +43,12 @@ export default function AppRoutes() {
       </Route>
 
       {/* student */}
-      <Route path="/student" element={<Navigate to="/student/Listings" replace />} />
+      <Route path="/student" element={<Navigate to="/Listings" replace />} />
+      <Route path="Listings" element={<StudDashboard />} />
       <Route path="/student/dashboard" element={<StudDashboard />} />
-      <Route path="/student/Sell" element={<Sell />} />
-      <Route path="/student/Messages" element={<Messages />} />
-      <Route path="/student/Account" element={<Account />} />
+      <Route path="Sell" element={<Sell />} />
+      <Route path="Messages" element={<Messages />} />
+      <Route path="Account" element={<Account />} />
 
       {/* 404 */}
       <Route path="*" element={<div style={{ padding: 20 }}>Not Found</div>} />
