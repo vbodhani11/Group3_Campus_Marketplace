@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import "../../style/admin-model.scss";
 
-type Role = "Admin" | "User";
-type Status = "Active" | "Inactive" | "Suspended";
+type Role = "admin" | "users";
+type Status = "active" | "inactive" | "suspended";
 
 export default function AddUserModal({
   open, onClose, onCreated,
@@ -16,8 +16,8 @@ export default function AddUserModal({
     full_name: "",
     email: "",
     phone: "",
-    role: "User" as Role,
-    status: "Active" as Status,
+    role: "users" as Role,   // default lowercase to match DB
+    status: "active" as Status,
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,8 +42,8 @@ export default function AddUserModal({
         full_name: form.full_name.trim(),
         email: form.email.trim().toLowerCase(),
         phone: form.phone.trim() || null,
-        role: form.role.toLowerCase(),     // 'admin'|'user'
-        status: form.status.toLowerCase(), // 'active'|'inactive'|'suspended'
+        role: form.role,           // 'admin' | 'users'
+        status: form.status,       // 'active' | 'inactive' | 'suspended'
         posts_count: 0,
         is_verified: true,
         last_active_at: new Date().toISOString(),
@@ -52,7 +52,7 @@ export default function AddUserModal({
       const { error } = await supabase.from("users").insert(payload);
       if (error) throw error;
 
-      onCreated(); // close + refresh handled by parent
+      onCreated();
     } catch (err: any) {
       setError(err.message || "Failed to create user.");
     } finally {
@@ -93,18 +93,18 @@ export default function AddUserModal({
 
           <label>
             <span>Role</span>
-            <select name="role" value={form.role} onChange={onChange}>
-              <option>User</option>
-              <option>Admin</option>
+            <select name="role" value={form.role} onChange={onChange} className="tt-cap">
+              <option value="users">users</option>
+              <option value="admin">admin</option>
             </select>
           </label>
 
           <label>
             <span>Status</span>
-            <select name="status" value={form.status} onChange={onChange}>
-              <option>Active</option>
-              <option>Inactive</option>
-              <option>Suspended</option>
+            <select name="status" value={form.status} onChange={onChange} className="tt-cap">
+              <option value="active">active</option>
+              <option value="inactive">inactive</option>
+              <option value="suspended">suspended</option>
             </select>
           </label>
 
