@@ -6,6 +6,7 @@ import LandingPage from "../pages/LandingPage";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import ForgotPassword from "../pages/auth/ForgotPassword";
+import ResetPassword from "../pages/auth/ResetPassword";
 
 // admin
 import AdminLayout from "../layout/AdminLayout";
@@ -17,10 +18,7 @@ import Settings from "../pages/admin/Settings";
 import AdminProfile from "../pages/admin/AdminProfile";
 
 // student
-import StudDashboard from "../pages/student/Listings";
-import Sell from "../pages/student/Sell";
-import Messages from "../pages/student/Messages";
-import Account from "../pages/student/Account";
+import StudDashboard from "../pages/student/StudDashboard";
 
 export default function AppRoutes() {
   return (
@@ -30,6 +28,7 @@ export default function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* admin */}
       <Route path="/admin" element={<AdminLayout />}>
@@ -43,12 +42,8 @@ export default function AppRoutes() {
       </Route>
 
       {/* student */}
-      <Route path="/student" element={<Navigate to="/Listings" replace />} />
-      <Route path="Listings" element={<StudDashboard />} />
+      <Route path="/student" element={<Navigate to="/student/dashboard" replace />} />
       <Route path="/student/dashboard" element={<StudDashboard />} />
-      <Route path="Sell" element={<Sell />} />
-      <Route path="Messages" element={<Messages />} />
-      <Route path="Account" element={<Account />} />
 
       {/* 404 */}
       <Route path="*" element={<div style={{ padding: 20 }}>Not Found</div>} />

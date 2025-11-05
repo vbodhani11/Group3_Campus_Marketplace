@@ -4,7 +4,7 @@ export default function AdminDashboard() {
   return (
     <section className="dash">
       <div className="dash-header">
-        <h1>Campus Marketplace</h1>
+        <h1>Dashboard</h1>
       </div>
 
       <div className="kpi-grid">

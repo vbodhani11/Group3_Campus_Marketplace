@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import AdminHeader from "./AdminHeader";
 import AdminSidebar from "./AdminSidebar";
+import AdminFooter from "./AdminFooter";
 import "../style/AdminLayout.scss";
 
 export default function AdminLayout() {
@@ -14,6 +15,7 @@ export default function AdminLayout() {
       <main className={`admin-main ${open ? "shifted" : ""}`}>
         <Outlet />
       </main>
+      <AdminFooter />
     </div>
   );
 }

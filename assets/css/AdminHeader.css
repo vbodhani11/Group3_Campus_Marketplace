@@ -1,0 +1,21 @@
+/* Shared palette, sizes, and helpers */
+.admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: 64px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #d4b483; /* your palette */
+  border-bottom: 1px solid #d4b483;
+}
+.admin-header .brand {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}/*# sourceMappingURL=AdminHeader.css.map */
