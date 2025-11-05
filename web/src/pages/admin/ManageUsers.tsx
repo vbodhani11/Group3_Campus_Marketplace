@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import AddUserModal from "../../components/admin/AddUserModel";
 import "../../style/admin-users.scss";
 
-type Role = "Admin" | "User";
-type Status = "Active" | "Inactive" | "Suspended";
+/** Types match DB (lowercase) */
+type Role = "admin" | "users";
+type Status = "active" | "inactive" | "suspended";
 
 type UserRow = {
   id: string;
@@ -25,85 +25,155 @@ const PAGE_SIZE = 8;
 export default function ManageUsers() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserRow[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+
   const [query, setQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"All" | "Active" | "Inactive" | "Suspended">("All");
   const [roleFilter, setRoleFilter] = useState<"All Roles" | Role>("All Roles");
   const [statusFilter, setStatusFilter] = useState<"All Status" | Status>("All Status");
+
   const [page, setPage] = useState(1);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [allChecked, setAllChecked] = useState(false);
 
-  // Modal state
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [statsRemote, setStatsRemote] = useState({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    admins: 0,
+  });
 
-  const fetchUsers = async () => {
+  /** ========= FETCH USERS (server-side filtering + pagination) ========= */
+  type FetchOpts = {
+    page?: number;
+    q?: string;
+    role?: Role | "All Roles";
+    status?: Status | "All Status";
+    tab?: "All" | "Active" | "Inactive" | "Suspended";
+  };
+
+  const fetchUsers = async (opts?: FetchOpts) => {
+    const p = opts?.page ?? page;
+    const q = (opts?.q ?? query).trim();
+    const r = opts?.role ?? roleFilter;
+    const s = opts?.status ?? statusFilter;
+    const t = opts?.tab ?? activeTab;
+
     setLoading(true);
-    const { data, error } = await supabase
+
+    let qb: any = supabase
       .from("users")
-      .select(`
+      .select(
+        `
         id, full_name, email, phone, role, status,
         posts_count, last_active_at, created_at, avatar_url, is_verified
-      `)
+      `,
+        { count: "exact" }
+      )
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error(error.message);
-      setUsers(mockUsers());
-    } else {
-      setUsers(
-        (data as any[]).map((u) => ({
-          id: u.id,
-          full_name: u.full_name ?? "",
-          email: u.email ?? "",
-          phone: u.phone ?? null,
-          role: toRole(u.role),
-          status: toStatus(u.status),
-          posts_count: u.posts_count ?? 0,
-          last_active_at: u.last_active_at,
-          created_at: u.created_at,
-          avatar_url: u.avatar_url ?? null,
-          is_verified: !!u.is_verified,
-        }))
-      );
+    // Tabs — Active includes NULL; use ilike to tolerate stray spaces/case
+    if (t !== "All") {
+      if (t === "Active") {
+        qb = qb.or("status.ilike.active%,status.is.null");
+      } else if (t === "Inactive") {
+        qb = qb.ilike("status", "inactive%");
+      } else if (t === "Suspended") {
+        qb = qb.ilike("status", "suspended%");
+      }
     }
+
+    // Dropdowns — Role straight match
+    if (r !== "All Roles") qb = qb.eq("role", r);
+
+    // Dropdowns — Status (include NULLs for 'active' if desired)
+    if (s !== "All Status") {
+      if (s === "active") qb = qb.or("status.ilike.active%,status.is.null");
+      else if (s === "inactive") qb = qb.ilike("status", "inactive%");
+      else if (s === "suspended") qb = qb.ilike("status", "suspended%");
+    }
+
+    // Search
+    if (q) {
+      const like = `%${q}%`;
+      qb = qb.or(`full_name.ilike.${like},email.ilike.${like},phone.ilike.${like}`);
+    }
+
+    // Pagination
+    const from = (p - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    const { data, count, error } = await qb.range(from, to);
+
+    if (error) {
+      console.error("fetchUsers error:", error);
+      setUsers([]);
+      setTotalCount(0);
+      setLoading(false);
+      return;
+    }
+
+    setUsers(
+      (data ?? []).map((u: any) => ({
+        id: u.id,
+        full_name: u.full_name ?? "",
+        email: u.email ?? "",
+        phone: u.phone ?? null,
+        role: (String(u.role ?? "users").toLowerCase() as Role),
+        status: (["inactive", "suspended"].includes(String(u.status).toLowerCase())
+          ? (String(u.status).toLowerCase() as Status)
+          : "active"),
+        posts_count: u.posts_count ?? 0,
+        last_active_at: u.last_active_at,
+        created_at: u.created_at,
+        avatar_url: u.avatar_url ?? null,
+        is_verified: !!u.is_verified,
+      }))
+    );
+    setTotalCount(count ?? 0);
     setLoading(false);
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  /** ========= CARD COUNTS ========= */
+  const fetchCounts = async () => {
+    const countWhere = async (fn?: (q: any) => any) => {
+      let q: any = supabase.from("users").select("id", { count: "exact", head: true });
+      if (fn) q = fn(q);
+      const { count, error } = await q;
+      if (error) { console.error(error); return 0; }
+      return count ?? 0;
+    };
 
-  // reset pagination + checkboxes when filters change
+    const [total, active, inactive, admins] = await Promise.all([
+      countWhere(),                                                      // all
+      countWhere(q => q.or("status.ilike.active%,status.is.null")),     // active (incl. NULL/odd spaces)
+      countWhere(q => q.ilike("status", "inactive%")),                  // inactive
+      countWhere(q => q.eq("role", "admin")),                           // admins
+    ]);
+
+    setStatsRemote({ total, active, inactive, admins });
+  };
+
+  /** initial load */
   useEffect(() => {
-    setPage(1); setChecked({}); setAllChecked(false);
-  }, [query, activeTab, roleFilter, statusFilter]);
+    fetchUsers({ page: 1 });
+    fetchCounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const filtered = useMemo(() => {
-    let list = [...users];
-    if (activeTab !== "All") list = list.filter((u) => u.status === activeTab);
-    if (roleFilter !== "All Roles") list = list.filter((u) => u.role === roleFilter);
-    if (statusFilter !== "All Status") list = list.filter((u) => u.status === statusFilter);
+  /** re-fetch when filters/tabs change */
+  useEffect(() => {
+    setPage(1);
+    setChecked({});
+    setAllChecked(false);
+    fetchUsers({ page: 1, q: query, role: roleFilter, status: statusFilter, tab: activeTab });
+    // If you want the cards to also reflect current filters/tabs, call fetchCounts() here.
+    // fetchCounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, roleFilter, statusFilter, activeTab]);
 
-    const q = query.trim().toLowerCase();
-    if (q) {
-      list = list.filter(
-        (u) =>
-          u.full_name.toLowerCase().includes(q) ||
-          u.email.toLowerCase().includes(q) ||
-          (u.phone ?? "").toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [users, query, activeTab, roleFilter, statusFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const stats = useMemo(() => {
-    const total = users.length;
-    const active = users.filter((u) => u.status === "Active").length;
-    const inactive = users.filter((u) => u.status === "Inactive").length;
-    const admins = users.filter((u) => u.role === "Admin").length;
-    return { total, active, inactive, admins };
-  }, [users]);
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const paged = users;
 
   const toggleAll = () => {
     const newVal = !allChecked;
@@ -112,11 +182,10 @@ export default function ManageUsers() {
     paged.forEach((u) => (next[u.id] = newVal));
     setChecked(next);
   };
-
   const toggleOne = (id: string) => setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const exportCSV = () => {
-    const rows = filtered.map((u) => ({
+    const rows = paged.map((u) => ({
       Name: u.full_name,
       Email: u.email,
       Phone: u.phone ?? "",
@@ -144,10 +213,10 @@ export default function ManageUsers() {
       <div className="header"><h1>Users</h1></div>
 
       <div className="stat-grid">
-        <StatCard title="Total Users" value={stats.total} sub="+12% from last month" icon="users" />
-        <StatCard title="Active Users" value={stats.active} sub={`${percent(stats.active, stats.total)} of total`} icon="active" />
-        <StatCard title="Inactive Users" value={stats.inactive} sub={`${percent(stats.inactive, stats.total)} of total`} icon="inactive" />
-        <StatCard title="Admins" value={stats.admins} sub="With full access" icon="shield" />
+        <StatCard title="Total Users" value={statsRemote.total} sub="+12% from last month" icon="users" />
+        <StatCard title="Active Users" value={statsRemote.active} sub={`${percent(statsRemote.active, statsRemote.total)} of total`} icon="active" />
+        <StatCard title="Inactive Users" value={statsRemote.inactive} sub={`${percent(statsRemote.inactive, statsRemote.total)} of total`} icon="inactive" />
+        <StatCard title="Admins" value={statsRemote.admins} sub="With full access" icon="shield" />
       </div>
 
       <div className="panel">
@@ -163,7 +232,7 @@ export default function ManageUsers() {
               ⤒ Import
               <input type="file" accept=".csv" onChange={importCSV} />
             </label>
-            <button className="btn primary" onClick={() => setIsAddOpen(true)}>＋ Add User</button>
+            {/* Add User removed */}
           </div>
         </div>
 
@@ -187,13 +256,13 @@ export default function ManageUsers() {
             <Dropdown
               label="All Roles"
               value={roleFilter}
-              options={["All Roles", "Admin", "Editor", "Moderator", "User"]}
+              options={["All Roles", "admin", "users"]}
               onChange={(v) => setRoleFilter(v as any)}
             />
             <Dropdown
               label="All Status"
               value={statusFilter}
-              options={["All Status", "Active", "Inactive", "Suspended"]}
+              options={["All Status", "active", "inactive", "suspended"]}
               onChange={(v) => setStatusFilter(v as any)}
             />
           </div>
@@ -241,11 +310,11 @@ export default function ManageUsers() {
                       {u.phone ? <div>📞 {u.phone}</div> : null}
                     </div>
                   </td>
-                  <td><Badge tone="neutral">{u.role}</Badge></td>
+                  <td><Badge tone="neutral" className="tt-cap">{u.role}</Badge></td>
                   <td>
-                    {u.status === "Active" && <Pill tone="success">Active</Pill>}
-                    {u.status === "Inactive" && <Pill tone="muted">Inactive</Pill>}
-                    {u.status === "Suspended" && <Pill tone="danger">Suspended</Pill>}
+                    {u.status === "active"    && <Pill tone="success" className="tt-cap">active</Pill>}
+                    {u.status === "inactive"  && <Pill tone="muted"   className="tt-cap">inactive</Pill>}
+                    {u.status === "suspended" && <Pill tone="danger"  className="tt-cap">suspended</Pill>}
                   </td>
                   <td>{u.posts_count ?? 0}</td>
                   <td>{relative(u.last_active_at)}</td>
@@ -257,30 +326,42 @@ export default function ManageUsers() {
         </div>
 
         <div className="pagination">
-          <div>Showing {paged.length} of {filtered.length} users</div>
+          <div>Showing {paged.length} of {totalCount} users</div>
           <div className="pager">
-            <button className="btn ghost" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</button>
+            <button
+              className="btn ghost"
+              disabled={page === 1}
+              onClick={() => {
+                const next = Math.max(1, page - 1);
+                setPage(next);
+                fetchUsers({ page: next });
+              }}
+            >
+              Previous
+            </button>
             <span className="page">{page} / {totalPages}</span>
-            <button className="btn ghost" disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</button>
+            <button
+              className="btn ghost"
+              disabled={page === totalPages}
+              onClick={() => {
+                const next = Math.min(totalPages, page + 1);
+                setPage(next);
+                fetchUsers({ page: next });
+              }}
+            >
+              Next
+            </button>
           </div>
         </div>
       </div>
-
-      {/* Add User Modal */}
-      <AddUserModal
-        open={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        onCreated={() => { setIsAddOpen(false); fetchUsers(); }}
-      />
     </div>
   );
 }
 
-/* ---------- tiny UI bits ---------- */
-
-function StatCard({ title, value, sub, icon }:{
-  title:string; value:number; sub:string; icon:"users"|"active"|"inactive"|"shield"
-}) {
+/* ---------- Small UI bits ---------- */
+function StatCard({
+  title, value, sub, icon,
+}: { title:string; value:number; sub:string; icon:"users"|"active"|"inactive"|"shield" }) {
   return (
     <div className="stat-card">
       <div className={`ic ${icon}`} />
@@ -305,9 +386,7 @@ function Tabs({ tabs, value, onChange }:{ tabs:string[]; value:string; onChange:
 
 function Dropdown({
   label, value, options, onChange,
-}:{
-  label: string; value: string; options: string[]; onChange:(v:string)=>void
-}) {
+}:{ label: string; value: string; options: string[]; onChange:(v:string)=>void }) {
   return (
     <div className="dropdown">
       <span className="icon">⏷</span>
@@ -322,28 +401,41 @@ function Avatar({ name, url }:{ name:string; url?:string }) {
   if (url) return <img src={url} alt={name} className="avatar" />;
   return <div className="avatar fallback">{initials(name)}</div>;
 }
+
 function Badge({
   children,
   tone = "neutral",
+  className = "",
 }: {
   children: any;
   tone?: "neutral" | "brand";
+  className?: string;
 }) {
-  return <span className={`badge ${tone}`}>{children}</span>;
-}
-function Pill({ 
-  children, 
-  tone 
-}:{ 
-  children:any; 
-  tone:"success"|"muted"|"danger" 
-}) { 
-  return <span className={`pill ${tone}`}>{children}</span>; 
+  return <span className={`badge ${tone} ${className}`}>{children}</span>;
 }
 
-/* ---------- helpers ---------- */
-function initials(n: string) { const p = n.split(" ").filter(Boolean); return (p[0]?.[0] ?? "").concat(p[1]?.[0] ?? "").toUpperCase() || "US"; }
-function formatDate(iso?: string | null) { if (!iso) return "-"; const d = new Date(iso); return d.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"2-digit"}); }
+function Pill({
+  children,
+  tone,
+  className = "",
+}: {
+  children: any;
+  tone: "success" | "muted" | "danger";
+  className?: string;
+}) {
+  return <span className={`pill ${tone} ${className}`}>{children}</span>;
+}
+
+/* ---------- Helpers ---------- */
+function initials(n: string) {
+  const p = n.split(" ").filter(Boolean);
+  return (p[0]?.[0] ?? "").concat(p[1]?.[0] ?? "").toUpperCase() || "US";
+}
+function formatDate(iso?: string | null) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+}
 function relative(iso?: string | null) {
   if (!iso) return "-";
   const ms = Date.now() - new Date(iso).getTime();
@@ -351,9 +443,9 @@ function relative(iso?: string | null) {
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins} min ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} hour${hrs>1?"s":""} ago`;
+  if (hrs < 24) return `${hrs} hour${hrs > 1 ? "s" : ""} ago`;
   const days = Math.floor(hrs / 24);
-  return `${days} day${days>1?"s":""} ago`;
+  return `${days} day${days > 1 ? "s" : ""} ago`;
 }
 function percent(part:number, total:number){ return total ? `${Math.round((part/total)*100)}%` : "0%"; }
 function toCSV(rows: Record<string, any>[]) {
@@ -365,23 +457,4 @@ function toCSV(rows: Record<string, any>[]) {
 function downloadFile(content:string, filename:string, type:string){
   const blob = new Blob([content], { type }); const url = URL.createObjectURL(blob);
   const a = document.createElement("a"); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
-function toRole(v:any): Role { const s = String(v ?? "").toLowerCase(); if (s==="admin") return "Admin"; return "User"; }
-function toStatus(v:any): Status { const s = String(v ?? "").toLowerCase(); if (s==="inactive") return "Inactive"; if (s==="suspended") return "Suspended"; return "Active"; }
-function isoMinutesAgo(n:number){ return new Date(Date.now()-n*60000).toISOString(); }
-function isoHoursAgo(n:number){ return new Date(Date.now()-n*3600000).toISOString(); }
-function isoDaysAgo(n:number){ return new Date(Date.now()-n*86400000).toISOString(); }
-
-/* Mock data - DB not ready */
-function mockUsers(): UserRow[] {
-  return [
-    { id:"1", full_name:"John Doe", email:"john.doe@example.com", phone:"+1 (555) 123-4567", role:"Admin", status:"Active", posts_count:45, last_active_at:isoMinutesAgo(2), created_at:"2024-01-15T10:00:00Z", is_verified:true },
-    { id:"2", full_name:"Jane Smith", email:"jane.smith@example.com", phone:"+1 (555) 234-5678", role:"User", status:"Active", posts_count:32, last_active_at:isoHoursAgo(1), created_at:"2024-02-20T10:00:00Z", is_verified:true },
-    { id:"3", full_name:"Bob Johnson", email:"bob.johnson@example.com", phone:"+1 (555) 345-6789", role:"User", status:"Inactive", posts_count:8, last_active_at:isoDaysAgo(5), created_at:"2024-03-10T10:00:00Z", is_verified:false },
-    { id:"4", full_name:"Alice Williams", email:"alice.williams@example.com", phone:"+1 (555) 456-7890", role:"Admin", status:"Active", posts_count:28, last_active_at:isoHoursAgo(3), created_at:"2024-04-05T10:00:00Z", is_verified:true },
-    { id:"5", full_name:"Charlie Brown", email:"charlie.brown@example.com", phone:"+1 (555) 567-8901", role:"User", status:"Active", posts_count:15, last_active_at:isoMinutesAgo(30), created_at:"2024-05-12T10:00:00Z", is_verified:true },
-    { id:"6", full_name:"Emma Davis", email:"emma.davis@example.com", phone:"+1 (555) 678-9012", role:"Admin", status:"Active", posts_count:52, last_active_at:isoMinutesAgo(15), created_at:"2024-06-08T10:00:00Z", is_verified:true },
-    { id:"7", full_name:"Michael Chen", email:"michael.chen@example.com", phone:"+1 (555) 789-0123", role:"User", status:"Suspended", posts_count:3, last_active_at:isoDaysAgo(7), created_at:"2024-07-22T10:00:00Z", is_verified:false },
-    { id:"8", full_name:"Sarah Anderson", email:"sarah.anderson@example.com", phone:"+1 (555) 890-1234", role:"User", status:"Active", posts_count:19, last_active_at:isoHoursAgo(2), created_at:"2024-08-14T10:00:00Z", is_verified:true },
-  ];
 }

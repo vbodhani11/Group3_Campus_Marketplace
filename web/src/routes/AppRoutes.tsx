@@ -18,7 +18,7 @@ import Settings from "../pages/admin/Settings";
 import AdminProfile from "../pages/admin/AdminProfile";
 
 // student
-import StudDashboard from "../pages/student/StudDashboard";
+import Listings from "../pages/student/Listings";
 
 export default function AppRoutes() {
   return (
@@ -43,7 +43,7 @@ export default function AppRoutes() {
 
       {/* student */}
       <Route path="/student" element={<Navigate to="/student/dashboard" replace />} />
-      <Route path="/student/dashboard" element={<StudDashboard />} />
+      <Route path="student/dashboard" element={<Listings />} />
 
       {/* 404 */}
       <Route path="*" element={<div style={{ padding: 20 }}>Not Found</div>} />
