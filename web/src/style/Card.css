@@ -1,0 +1,31 @@
+.feature-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+.feature-card .icon {
+  font-size: 2rem;
+  background: #d4b483;
+  color: white;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 1rem;
+}
+.feature-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+.feature-card p {
+  font-size: 0.95rem;
+  color: #555;
+}
+.feature-card:hover {
+  transform: translateY(-5px);
+}/*# sourceMappingURL=Card.css.map */

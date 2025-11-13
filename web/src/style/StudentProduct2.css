@@ -1,0 +1,201 @@
+/* Shared palette, sizes, and helpers */
+.student-product {
+  --bg: #f7f7f8;
+  --card: #fff;
+  --line: #e5e7eb;
+  --muted: #6b7280;
+  --text: #111827;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06),
+             0 1px 3px rgba(16, 24, 40, 0.1);
+  background: var(--bg);
+  color: var(--text);
+  padding: 24px;
+  min-height: 100vh;
+  display: grid;
+  gap: 24px;
+  /* Breadcrumb */
+  /* Related sections */
+}
+.student-product .breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.student-product .breadcrumb a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.student-product .breadcrumb a:hover {
+  color: #d4b483;
+}
+.student-product .breadcrumb span {
+  color: var(--muted);
+}
+.student-product .breadcrumb .active {
+  color: #111;
+  font-weight: 600;
+}
+.student-product .card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+.student-product .product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+@media (max-width: 820px) {
+  .student-product .product-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.student-product .image-wrap {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fafafa;
+}
+.student-product .image-wrap img {
+  width: 100%;
+  height: auto;
+  display: block;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+.student-product .details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.student-product .details .title {
+  font-size: 24px;
+  font-weight: 700;
+}
+.student-product .details .category {
+  color: var(--muted);
+  font-size: 15px;
+}
+.student-product .details .price {
+  font-size: 22px;
+  font-weight: 700;
+  color: #047857;
+}
+.student-product .details .condition,
+.student-product .details .posted {
+  font-size: 14px;
+  color: var(--muted);
+}
+.student-product .details .desc {
+  margin-top: 12px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #333;
+}
+.student-product .details .actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.student-product .details .actions .btn {
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.student-product .details .actions .btn.primary {
+  background: #d4b483;
+  color: #000;
+}
+.student-product .details .actions .btn.primary:hover {
+  background: #c3a26c;
+}
+.student-product .details .actions .btn.ghost {
+  background: #fff;
+  border-color: var(--line);
+}
+.student-product .details .actions .btn.ghost:hover {
+  background: #faf8f4;
+}
+.student-product .details .seller-card {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fafafa;
+}
+.student-product .details .seller-card .avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #e5e7eb;
+  font-weight: 700;
+  font-size: 18px;
+}
+.student-product .details .seller-card .info {
+  flex: 1;
+}
+.student-product .details .seller-card .info .name {
+  font-weight: 700;
+}
+.student-product .details .seller-card .info .email {
+  font-size: 13px;
+  color: var(--muted);
+}
+.student-product .related-section h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.student-product .related-section .related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.student-product .related-section .related-card {
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.student-product .related-section .related-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.1);
+}
+.student-product .related-section .related-card img {
+  width: 100%;
+  height: 160px;
+  -o-object-fit: cover;
+     object-fit: cover;
+  border-bottom: 1px solid var(--line);
+}
+.student-product .related-section .related-card .rc-body {
+  padding: 10px 12px;
+}
+.student-product .related-section .related-card .rc-body h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.student-product .related-section .related-card .rc-body p {
+  font-weight: 700;
+  color: #047857;
+  font-size: 14px;
+}/*# sourceMappingURL=StudentProduct2.css.map */

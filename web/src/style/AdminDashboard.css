@@ -1,0 +1,85 @@
+/* Shared palette, sizes, and helpers */
+.dash .dash-header {
+  margin-bottom: 18px;
+}
+.dash .dash-header h1 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #333333;
+}
+.dash .kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+@media (max-width: 1100px) {
+  .dash .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .dash .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.dash .kpi .kpi-title {
+  color: #374151;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.dash .kpi .kpi-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #333333;
+  line-height: 1.1;
+}
+.dash .kpi .kpi-delta {
+  margin-top: 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.dash .kpi .kpi-delta.up {
+  color: #16a34a;
+}
+.dash .kpi .kpi-delta.down {
+  color: #dc2626;
+}
+.dash .activity {
+  padding: 0;
+}
+.dash .activity .activity-title {
+  padding: 16px;
+  font-weight: 800;
+  color: #333333;
+  border-bottom: 1px solid #eae7df;
+}
+.dash .activity .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-top: 1px solid #eae7df;
+}
+.dash .activity .row .time {
+  color: #6b6b6b;
+  font-size: 0.9rem;
+}
+.dash .activity .badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.dash .activity .badge.ok {
+  background: rgba(14, 165, 233, 0.12);
+  color: #0ea5e9;
+}
+.dash .activity .badge.warn {
+  background: #fff4d6;
+  color: #b45309;
+}
+.dash .activity .badge.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}/*# sourceMappingURL=AdminDashboard.css.map */
