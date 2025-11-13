@@ -1,132 +1,98 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "../../style/admin-listings.scss";
+import { supabase } from "../../lib/supabaseClient";
 
+/** === DB shapes (based on your screenshots) === */
+type DbListing = {
+  id: string;
+  product_id: string | null;
+  category: string | null;
+  title: string;
+  description: string | null;
+  condition: "like_new" | "good" | "used" | string;
+  status: "active" | "pending" | "sold" | "rejected" | "draft" | string;
+  price: number | string | null;
+  currency: string | null;
+  thumbnail_url: string | null;
+  views_count: number | null;
+  seller_id: string | null;
+  created_at: string;
+};
+
+type DbUser = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+};
+
+/** === UI types === */
 type ListingStatus = "Active" | "Pending" | "Sold" | "Rejected";
-type Category = "Electronics" | "Books" | "Furniture" | "Clothing";
-
-type Listing = {
+type ListingUI = {
   id: string;
   title: string;
   condition: "Like New" | "Good" | "Used";
   seller: { name: string; email: string };
-  category: Category;
+  category: string;
   price: number;
   status: ListingStatus;
   views: number;
+  thumb?: string | null;
 };
 
-const INITIAL_LISTINGS: Listing[] = [
-  {
-    id: "1",
-    title: "MacBook Pro 2021 M1",
-    condition: "Like New",
-    seller: { name: "John Doe", email: "john@campus.edu" },
-    category: "Electronics",
-    price: 1200,
-    status: "Active",
-    views: 156,
-  },
-  {
-    id: "2",
-    title: "Calculus Textbook 8th Edition",
-    condition: "Good",
-    seller: { name: "Jane Smith", email: "jane@campus.edu" },
-    category: "Books",
-    price: 45,
-    status: "Active",
-    views: 89,
-  },
-  {
-    id: "3",
-    title: "Dorm Room Desk",
-    condition: "Used",
-    seller: { name: "Bob Johnson", email: "bob@campus.edu" },
-    category: "Furniture",
-    price: 80,
-    status: "Pending",
-    views: 34,
-  },
-  {
-    id: "4",
-    title: "Winter Jacket – North Face",
-    condition: "Good",
-    seller: { name: "Alice Williams", email: "alice@campus.edu" },
-    category: "Clothing",
-    price: 60,
-    status: "Active",
-    views: 67,
-  },
-  {
-    id: "5",
-    title: "iPhone 13 128GB",
-    condition: "Good",
-    seller: { name: "Charlie Brown", email: "charlie@campus.edu" },
-    category: "Electronics",
-    price: 550,
-    status: "Sold",
-    views: 234,
-  },
-  {
-    id: "6",
-    title: "Mini Fridge",
-    condition: "Good",
-    seller: { name: "Emma Davis", email: "emma@campus.edu" },
-    category: "Furniture",
-    price: 100,
-    status: "Active",
-    views: 122,
-  },
-  {
-    id: "7",
-    title: "Graphics Calculator TI-84",
-    condition: "Used",
-    seller: { name: "Michael Chen", email: "michael@campus.edu" },
-    category: "Electronics",
-    price: 85,
-    status: "Rejected",
-    views: 45,
-  },
-  {
-    id: "8",
-    title: "Organic Chemistry Study Guide",
-    condition: "Like New",
-    seller: { name: "Sarah Anderson", email: "sarah@campus.edu" },
-    category: "Books",
-    price: 25,
-    status: "Active",
-    views: 78,
-  },
-];
+const LISTING_FIELDS =
+  "id,product_id,category,title,description,condition,status,price,currency,thumbnail_url,views_count,seller_id,created_at";
 
-function Avatar({ name }: { name: string }) {
-  const initials = name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  return <div className="av">{initials}</div>;
+/** map db -> ui */
+function toUiStatus(s: string): ListingStatus {
+  switch (s) {
+    case "active":
+      return "Active";
+    case "sold":
+      return "Sold";
+    case "rejected":
+      return "Rejected";
+    case "pending":
+    case "draft":
+      return "Pending";
+    default:
+      return "Active";
+  }
+}
+function toUiCondition(c: string): "Like New" | "Good" | "Used" {
+  switch (c) {
+    case "like_new":
+      return "Like New";
+    case "used":
+      return "Used";
+    default:
+      return "Good";
+  }
 }
 
+/** small UI atoms */
+function Avatar({ name }: { name: string }) {
+  const initials =
+    (name || "U")
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "U";
+  return <div className="av">{initials}</div>;
+}
 function Badge({ status }: { status: ListingStatus }) {
   return <span className={`badge badge--${status.toLowerCase()}`}>{status}</span>;
 }
-
 function Pill({ text }: { text: string }) {
   return <span className="pill">{text}</span>;
 }
-
 function EyeIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-      <path
-        d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"
-        fill="currentColor"
-      />
+      <path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z" fill="currentColor" />
     </svg>
   );
 }
-
 function Kebab() {
   return (
     <button className="kebab" aria-label="Actions">
@@ -137,80 +103,170 @@ function Kebab() {
   );
 }
 
-const TABS: Array<{ key: "all" | ListingStatus; label: string; dot?: number }> = [
+const TABS: Array<{ key: "all" | ListingStatus; label: string }> = [
   { key: "all", label: "All Listings" },
   { key: "Active", label: "Active" },
-  { key: "Pending", label: "Pending", dot: 1 },
+  { key: "Pending", label: "Pending" },
   { key: "Sold", label: "Sold" },
   { key: "Rejected", label: "Rejected" },
 ];
 
-export default function Listings() {
+export default function ManageListings() {
   const [query, setQuery] = useState("");
   const [statusTab, setStatusTab] = useState<"all" | ListingStatus>("all");
-  const [category, setCategory] = useState<"All" | Category>("All");
+  const [category, setCategory] = useState<"All" | string>("All");
 
+  /** table rows */
+  const [rows, setRows] = useState<ListingUI[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  /** KPIs (true table-wide counts, not filtered) */
+  const [kpi, setKpi] = useState({ total: 0, active: 0, pending: 0, value: 0 });
+
+  /** load KPIs from entire table */
+  async function loadKpis() {
+    // total count
+    const totalQ = supabase.from("listings").select("*", { count: "exact", head: true });
+    const activeQ = supabase
+      .from("listings")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active");
+    const pendingQ = supabase
+      .from("listings")
+      .select("*", { count: "exact", head: true })
+      .or("status.eq.pending,status.eq.draft");
+    const soldValQ = supabase.from("listings").select("price,status");
+
+    const [{ count: total }, { count: active }, { count: pending }, { data: soldRows, error: soldErr }] =
+      await Promise.all([totalQ, activeQ, pendingQ, soldValQ]);
+
+    const value = !soldErr
+      ? (soldRows as DbListing[]).filter((r) => r.status === "sold").reduce((s, r) => s + Number(r.price || 0), 0)
+      : 0;
+
+    setKpi({
+      total: total || 0,
+      active: active || 0,
+      pending: pending || 0,
+      value,
+    });
+  }
+
+  /** load listings for the table (with current filters except search) + LEFT join to users */
+  async function loadRows() {
+    setLoading(true);
+    setErr(null);
+
+    let q = supabase.from("listings").select(LISTING_FIELDS).order("created_at", { ascending: false });
+
+    // server-side filters we can push
+    if (statusTab !== "all") q = q.eq("status", statusTab.toLowerCase());
+    if (category !== "All") q = q.eq("category", category);
+
+    const { data: listings, error } = await q;
+    if (error) {
+      setErr(error.message);
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    const ls = (listings || []) as DbListing[];
+
+    // LEFT JOIN to users by seller_id -> id (use full_name / email)
+    const sellerIds = Array.from(new Set(ls.map((l) => l.seller_id).filter(Boolean))) as string[];
+    const usersMap = new Map<string, DbUser>();
+
+    if (sellerIds.length > 0) {
+      const { data: users, error: uErr } = await supabase.from("users").select("id,full_name,email").in("id", sellerIds);
+      if (!uErr && users) {
+        for (const u of users as DbUser[]) usersMap.set(u.id, u);
+      }
+    }
+
+    const ui: ListingUI[] = ls.map((l) => {
+      const u = (l.seller_id && usersMap.get(l.seller_id)) || null;
+      return {
+        id: l.id,
+        title: l.title,
+        condition: toUiCondition(l.condition || "good"),
+        seller: {
+          name: (u?.full_name || "Unknown").toString(),
+          email: (u?.email || "—").toString(),
+        },
+        category: l.category || "Other",
+        price: Number(l.price ?? 0),
+        status: toUiStatus(l.status || "active"),
+        views: Number(l.views_count ?? 0),
+        thumb: l.thumbnail_url || null,
+      };
+    });
+
+    setRows(ui);
+    setLoading(false);
+  }
+
+  /** on first load + whenever filters change */
+  useEffect(() => {
+    loadKpis();
+  }, []); // KPIs are global; load once (or call again after mutations)
+
+  useEffect(() => {
+    loadRows();
+  }, [statusTab, category]);
+
+  /** client-side search on the loaded rows */
   const filtered = useMemo(() => {
-    return INITIAL_LISTINGS.filter((l) => {
-      const matchesStatus = statusTab === "all" ? true : l.status === statusTab;
-      const matchesCat = category === "All" ? true : l.category === category;
-      const q = query.trim().toLowerCase();
-      const matchesQ =
-        q.length === 0 ||
+    const q = query.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter(
+      (l) =>
         l.title.toLowerCase().includes(q) ||
         l.seller.name.toLowerCase().includes(q) ||
-        l.seller.email.toLowerCase().includes(q);
-      return matchesStatus && matchesCat && matchesQ;
-    });
-  }, [query, statusTab, category]);
-
-  const totals = useMemo(() => {
-    const active = INITIAL_LISTINGS.filter((l) => l.status === "Active").length;
-    const sold = INITIAL_LISTINGS.filter((l) => l.status === "Sold");
-    const totalValue = sold.reduce((s, l) => s + l.price, 0);
-    return { total: INITIAL_LISTINGS.length, active, pending: 1, value: totalValue };
-  }, []);
+        l.seller.email.toLowerCase().includes(q)
+    );
+  }, [rows, query]);
 
   return (
     <div className="admin-listings">
       <h1 className="page-title">Listings</h1>
 
-      {/* KPI cards */}
+      {/* KPI cards (true table numbers) */}
       <section className="kpi-grid">
         <div className="kpi-card">
           <div className="kpi-head">Total Listings</div>
-          <div className="kpi-num">{totals.total}</div>
-          <div className="kpi-sub">+18 from last week</div>
+          <div className="kpi-num">{kpi.total}</div>
+          <div className="kpi-sub">Overall</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-head">Active Listings</div>
-          <div className="kpi-num">{totals.active}</div>
-          <div className="kpi-sub">63% of total</div>
+          <div className="kpi-num">{kpi.active}</div>
+          <div className="kpi-sub">Active total count</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-head">Pending Review</div>
-          <div className="kpi-num">{totals.pending}</div>
+          <div className="kpi-num">{kpi.pending}</div>
           <div className="kpi-sub">Require approval</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-head">Total Value</div>
-          <div className="kpi-num">${totals.value}</div>
-          <div className="kpi-sub">From sold items</div>
+          <div className="kpi-num">${kpi.value}</div>
+          <div className="kpi-sub">Sold items</div>
         </div>
       </section>
 
-      {/* Manage Listings block */}
       <section className="block">
         <div className="block-head">
           <div>
             <div className="block-title">Manage Listings</div>
             <div className="block-sub">Review and manage all marketplace listings</div>
           </div>
-          <button className="btn btn--ghost">
+          <button className="btn btn--ghost" onClick={() => { loadKpis(); loadRows(); }}>
             <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
               <path d="M5 20h14a1 1 0 0 0 1-1v-2H4v2a1 1 0 0 0 1 1Zm14-12h-4V4h-6v4H5l7 7 7-7Z" fill="currentColor" />
             </svg>
-            Export
+            Refresh
           </button>
         </div>
 
@@ -223,7 +279,6 @@ export default function Listings() {
               onClick={() => setStatusTab(t.key as any)}
             >
               {t.label}
-              {typeof t.dot === "number" && <span className="tab-dot">{t.dot}</span>}
             </button>
           ))}
         </div>
@@ -246,8 +301,8 @@ export default function Listings() {
               <span className="caret" />
             </button>
             <div className="filter-menu">
-              {(["All", "Electronics", "Books", "Furniture", "Clothing"] as const).map((c) => (
-                <div key={c} className="filter-item" onClick={() => (setCategory(c as any))}>
+              {["All", "Books", "Electronics", "Furniture", "Clothing", "Other"].map((c) => (
+                <div key={c} className="filter-item" onClick={() => setCategory(c)}>
                   {c}
                 </div>
               ))}
@@ -278,11 +333,36 @@ export default function Listings() {
             <div className="td actions">Actions</div>
           </div>
 
+          {err && (
+            <div className="tr">
+              <div className="td" style={{ gridColumn: "1 / -1", color: "#b91c1c" }}>
+                Error: {err}
+              </div>
+            </div>
+          )}
+          {loading && !err && (
+            <div className="tr">
+              <div className="td" style={{ gridColumn: "1 / -1" }}>Loading…</div>
+            </div>
+          )}
+          {!loading && !err && filtered.length === 0 && (
+            <div className="tr">
+              <div className="td" style={{ gridColumn: "1 / -1" }}>No listings found.</div>
+            </div>
+          )}
+
           {filtered.map((l) => (
             <div className="tr" key={l.id}>
               <div className="td chk">
                 <input type="checkbox" />
-                <div className="thumb" />
+                {l.thumb ? (
+                  <div
+                    className="thumb"
+                    style={{ backgroundImage: `url(${l.thumb})`, backgroundSize: "cover", backgroundPosition: "center" }}
+                  />
+                ) : (
+                  <div className="thumb" />
+                )}
                 <div className="listing">
                   <div className="title">{l.title}</div>
                   <div className="sub">{l.condition}</div>
@@ -301,7 +381,7 @@ export default function Listings() {
                 <Pill text={l.category} />
               </div>
 
-              <div className="td price">${l.price}</div>
+              <div className="td price">${Number(l.price).toLocaleString()}</div>
 
               <div className="td status">
                 <Badge status={l.status} />
@@ -319,10 +399,10 @@ export default function Listings() {
           ))}
 
           <div className="tfoot">
-            <div>Showing {filtered.length} of {INITIAL_LISTINGS.length} listings</div>
+            <div>Showing {filtered.length} of {kpi.total} listings</div>
             <div className="pager">
               <button className="btn btn--ghost" disabled>Previous</button>
-              <button className="btn btn--ghost">Next</button>
+              <button className="btn btn--ghost" disabled>Next</button>
             </div>
           </div>
         </div>
