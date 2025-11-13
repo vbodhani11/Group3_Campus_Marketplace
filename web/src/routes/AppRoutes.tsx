@@ -1,5 +1,7 @@
 // web/src/routes/AppRoutes.tsx
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
+import { BrowserRouter as Routes, Route } from "react-router-dom";
+import { CartProvider } from "../context/CartContext";
 
 // public
 import LandingPage from "../pages/LandingPage";
@@ -18,13 +20,18 @@ import Settings from "../pages/admin/Settings";
 import AdminProfile from "../pages/admin/AdminProfile";
 
 // student
-import StudDashboard from "../pages/student/Listings";
+import StudentDashboard from "../pages/student/StudDashboard";
+import Listings from "../pages/student/Listings";
 import Sell from "../pages/student/Sell";
 import Messages from "../pages/student/Messages";
-import Account from "../pages/student/Account";
+import StudentLayout from "../layout/StudentLayout";
+import Profile from "../pages/student/StudentProfile";
+import StudentProduct from "../pages/student/StudentProduct";
+import Cart from "../pages/student/StudentCartPage";
 
 export default function AppRoutes() {
   return (
+    <CartProvider>
     <Routes>
       {/* public */}
       <Route path="/" element={<LandingPage />} />
@@ -45,15 +52,29 @@ export default function AppRoutes() {
       </Route>
 
       {/* student */}
-      <Route path="/student" element={<Navigate to="/Listings" replace />} />
-      <Route path="Listings" element={<StudDashboard />} />
-      <Route path="/student/dashboard" element={<StudDashboard />} />
-      <Route path="Sell" element={<Sell />} />
-      <Route path="Messages" element={<Messages />} />
-      <Route path="Account" element={<Account />} />
+        {/* <Route path="/student" element={<Navigate to="/Listings" replace />} /> */}
+        {/* <Route path="Listings" element={<StudDashboard />} /> */}
+        {/* <Route path="/student/dashboard" element={<StudDashboard />} /> */}
+        {/* <Route path="Sell" element={<Sell />} /> */}
+        {/* <Route path="Messages" element={<Messages />} /> */}
+        {/* <Route path="Account" element={<Account />} /> */}
 
-      {/* 404 */}
+        <Route path="/student" element={<StudentLayout />}>
+        <Route index element={<Navigate to="StudentDashboard" replace />} />
+        <Route path="dashboard" element={<StudentDashboard />} />
+        <Route path="sell" element={<Sell />} />
+        <Route path="listings" element={<Listings />} />
+        <Route path="product" element={<StudentProduct />} />
+        <Route path="messages" element={<Messages />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="listing/:id" element={<StudentProduct />} />
+        <Route path="cart" element={<Cart />} />
+        </Route>
+
+
+        {/* 404 */}
       <Route path="*" element={<div style={{ padding: 20 }}>Not Found</div>} />
     </Routes>
+    </CartProvider>
   );
 }

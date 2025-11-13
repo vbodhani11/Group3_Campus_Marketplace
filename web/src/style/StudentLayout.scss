@@ -1,0 +1,24 @@
+@use "./_theme.scss" as *;
+
+.student-shell { background: $bg; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* acts like the body area between header and footer */
+.student-frame, .student-body {        /* keep .admin-body as an alias if you ever use it */
+  display: flex;
+  flex: 1 1 auto;
+  min-height: calc(100vh - 64px);  /* your header is 64px */
+}
+
+/* main content area that should expand */
+.student-main, .student-content {      /* alias for consistency with other code */
+  flex: 1 1 auto;
+  padding: 24px 28px;              /* you already had this */
+}
+
+/* overlay shown when sidebar is open */
+.portal-overlay {
+  position: fixed; inset: 64px 0 0 0; background: rgba(0,0,0,.2); z-index: 40;
+}
+
+/* shared card helper if you need it */
+.card { background: #fff; border: 1px solid $border; border-radius: $radius; box-shadow: $shadow; padding: 16px; }

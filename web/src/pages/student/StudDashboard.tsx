@@ -1,19 +1,11 @@
-import Button from "../../components/Button";
-import Input from "../../components/Input";
-import Card from "../../components/Card";
+import "../../style/StudentDashboard.scss";
 
-export default function Home() {
+export default function StudentDashboard() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <Card>
-        <h1 className="text-2xl font-bold mb-4 text-center">
-          Tailwind Setup ✅
-        </h1>
-        <div className="flex flex-col gap-3">
-          <Input placeholder="Type something..." />
-          <Button>Click Me</Button>
-        </div>
-      </Card>
-    </div>
+    <section className="dash">
+      <div className="dash-header">
+        <h1>Dashboard</h1>
+      </div>
+    </section>
   );
 }
