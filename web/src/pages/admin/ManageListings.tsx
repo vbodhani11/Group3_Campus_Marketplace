@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import "../../style/admin-listings.scss";
 import { supabase } from "../../lib/supabaseClient";
 
-/** === DB shapes (based on your screenshots) === */
+/** === DB shapes === */
 type DbListing = {
   id: string;
   product_id: string | null;
@@ -15,13 +15,13 @@ type DbListing = {
   currency: string | null;
   thumbnail_url: string | null;
   views_count: number | null;
-  seller_id: string | null;        // usually auth.users.id
+  seller_id: string | null;
   created_at: string;
 };
 
 type DbUser = {
-  id: string;                      // public.users PK
-  auth_user_id: string | null;     // links to auth.users.id (when present)
+  id: string;
+  auth_user_id: string | null;
   full_name: string | null;
   email: string | null;
 };
@@ -38,71 +38,48 @@ type ListingUI = {
   status: ListingStatus;
   views: number;
   thumb?: string | null;
+  // optional extras for export convenience
+  product_id?: string | null;
 };
 
 const LISTING_FIELDS =
   "id,product_id,category,title,description,condition,status,price,currency,thumbnail_url,views_count,seller_id,created_at";
 
-/** map db -> ui */
 function toUiStatus(s: string): ListingStatus {
   switch (s) {
-    case "active":
-      return "Active";
-    case "sold":
-      return "Sold";
-    case "rejected":
-      return "Rejected";
+    case "active": return "Active";
+    case "sold": return "Sold";
+    case "rejected": return "Rejected";
     case "pending":
-    case "draft":
-      return "Pending";
-    default:
-      return "Active";
+    case "draft": return "Pending";
+    default: return "Active";
   }
 }
 function toUiCondition(c: string): "Like New" | "Good" | "Used" {
   switch (c) {
-    case "like_new":
-      return "Like New";
-    case "used":
-      return "Used";
-    default:
-      return "Good";
+    case "like_new": return "Like New";
+    case "used": return "Used";
+    default: return "Good";
   }
 }
 
-/** small UI atoms */
 function Avatar({ name }: { name: string }) {
   const initials =
-    (name || "U")
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "U";
+    (name || "U").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "U";
   return <div className="av">{initials}</div>;
 }
 function Badge({ status }: { status: ListingStatus }) {
   return <span className={`badge badge--${status.toLowerCase()}`}>{status}</span>;
 }
-function Pill({ text }: { text: string }) {
-  return <span className="pill">{text}</span>;
-}
+function Pill({ text }: { text: string }) { return <span className="pill">{text}</span>; }
 function EyeIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-      <path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z" fill="currentColor" />
+      <path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z" fill="currentColor"/>
     </svg>
   );
 }
-function Kebab() {
-  return (
-    <button className="kebab" aria-label="Actions">
-      <span />
-      <span />
-      <span />
-    </button>
-  );
-}
+function Kebab() { return (<button className="kebab" aria-label="Actions"><span/><span/><span/></button>); }
 
 const TABS: Array<{ key: "all" | ListingStatus; label: string }> = [
   { key: "all", label: "All Listings" },
@@ -117,161 +94,169 @@ export default function ManageListings() {
   const [statusTab, setStatusTab] = useState<"all" | ListingStatus>("all");
   const [category, setCategory] = useState<"All" | string>("All");
 
-  /** table rows */
+  // rows for current page
   const [rows, setRows] = useState<ListingUI[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
-  /** KPIs (true table-wide counts, not filtered) */
+  // KPIs (global table stats)
   const [kpi, setKpi] = useState({ total: 0, active: 0, pending: 0, value: 0 });
 
-  /** load KPIs from entire table */
-  async function loadKpis() {
-    const totalQ = supabase.from("listings").select("*", { count: "exact", head: true });
-    const activeQ = supabase.from("listings").select("*", { count: "exact", head: true }).eq("status", "active");
-    const pendingQ = supabase
-      .from("listings")
-      .select("*", { count: "exact", head: true })
-      .or("status.eq.pending,status.eq.draft");
-    const soldValQ = supabase.from("listings").select("price,status");
+  // --- Pagination (SERVER-SIDE) ---
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(0);                 // 0-based
+  const [totalMatching, setTotalMatching] = useState(0);
 
-    const [
-      { count: total },
-      { count: active },
-      { count: pending },
-      { data: soldRows, error: soldErr },
-    ] = await Promise.all([totalQ, activeQ, pendingQ, soldValQ]);
+  // Reset page when filters/search change
+  useEffect(() => { setPage(0); }, [statusTab, category, query]);
 
-    const value = !soldErr
-      ? (soldRows as DbListing[]).filter((r) => r.status === "sold").reduce((s, r) => s + Number(r.price || 0), 0)
-      : 0;
-
-    setKpi({
-      total: total || 0,
-      active: active || 0,
-      pending: pending || 0,
-      value,
-    });
-  }
-
-  /** load listings for the table (with current filters except search) + robust LEFT join to users */
-  async function loadRows() {
-    setLoading(true);
-    setErr(null);
-
-    let q = supabase.from("listings").select(LISTING_FIELDS).order("created_at", { ascending: false });
-
-    if (statusTab !== "all") q = q.eq("status", statusTab.toLowerCase());
-    if (category !== "All") q = q.eq("category", category);
-
-    const { data: listings, error } = await q;
-    if (error) {
-      setErr(error.message);
-      setRows([]);
-      setLoading(false);
-      return;
-    }
-
-    const ls = (listings || []) as DbListing[];
-
-    // collect seller ids from listings
-    const sellerIds = Array.from(new Set(ls.map((l) => l.seller_id).filter(Boolean))) as string[];
-
-    // Build a users map keyed by BOTH auth_user_id and id,
-    // so listings.seller_id can match either scheme.
-    const usersMap = new Map<string, DbUser>();
-
-    if (sellerIds.length > 0) {
-      const q1 = supabase
-        .from("users")
-        .select("id,auth_user_id,full_name,email")
-        .in("auth_user_id", sellerIds);
-      const q2 = supabase
-        .from("users")
-        .select("id,auth_user_id,full_name,email")
-        .in("id", sellerIds);
-
-      const [r1, r2] = await Promise.all([q1, q2]);
-
-      const allUsers: DbUser[] = [
-        ...((r1.data as DbUser[]) || []),
-        ...((r2.data as DbUser[]) || []),
-      ];
-
-      for (const u of allUsers) {
-        if (u.auth_user_id) usersMap.set(u.auth_user_id, u); // key by auth uid
-        usersMap.set(u.id, u);                               // and by public.users id
-      }
-    }
-
-    const ui: ListingUI[] = ls.map((l) => {
-      const u = (l.seller_id && usersMap.get(l.seller_id)) || null;
-      return {
-        id: l.id,
-        title: l.title,
-        condition: toUiCondition(l.condition || "good"),
-        seller: {
-          name: (u?.full_name || "Unknown").toString(),
-          email: (u?.email || "—").toString(),
-        },
-        category: l.category || "Other",
-        price: Number(l.price ?? 0),
-        status: toUiStatus(l.status || "active"),
-        views: Number(l.views_count ?? 0),
-        thumb: l.thumbnail_url || null,
-      };
-    });
-
-    setRows(ui);
-    setLoading(false);
-  }
-
+  // KPIs once (overall)
   useEffect(() => {
+    async function loadKpis() {
+      const totalQ  = supabase.from("listings").select("*", { count: "exact", head: true });
+      const activeQ = supabase.from("listings").select("*", { count: "exact", head: true }).eq("status", "active");
+      const pendingQ= supabase.from("listings").select("*", { count: "exact", head: true }).or("status.eq.pending,status.eq.draft");
+      const soldValQ= supabase.from("listings").select("price,status");
+      const [t,a,p,s] = await Promise.all([totalQ,activeQ,pendingQ,soldValQ]);
+      const value = !s.error ? (s.data as DbListing[])
+        .filter(r => r.status === "sold")
+        .reduce((sum, r) => sum + Number(r.price || 0), 0) : 0;
+      setKpi({ total: t.count || 0, active: a.count || 0, pending: p.count || 0, value });
+    }
     loadKpis();
   }, []);
 
+  // Load one page (server-side range)
   useEffect(() => {
-    loadRows();
-  }, [statusTab, category]);
+    async function loadPage() {
+      setLoading(true);
+      setErr(null);
 
-  /** client-side search on the loaded rows */
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(
-      (l) =>
-        l.title.toLowerCase().includes(q) ||
-        l.seller.name.toLowerCase().includes(q) ||
-        l.seller.email.toLowerCase().includes(q)
+      let q = supabase
+        .from("listings")
+        .select(LISTING_FIELDS, { count: "exact" })
+        .order("created_at", { ascending: false });
+
+      if (statusTab !== "all") q = q.eq("status", statusTab.toLowerCase());
+      if (category !== "All") q = q.eq("category", category);
+      const qstr = query.trim();
+      if (qstr) q = q.or(`title.ilike.%${qstr}%,description.ilike.%${qstr}%`);
+
+      const from = page * PAGE_SIZE;
+      const to   = from + PAGE_SIZE - 1;
+
+      const { data: listings, error, count } = await q.range(from, to);
+      if (error) {
+        setErr(error.message);
+        setRows([]);
+        setTotalMatching(0);
+        setLoading(false);
+        return;
+      }
+
+      const ls = (listings || []) as DbListing[];
+      setTotalMatching(count || 0);
+
+      // Join to users (support both public.users.id and auth_user_id)
+      const sellerIds = Array.from(new Set(ls.map(l => l.seller_id).filter(Boolean))) as string[];
+      const usersMap = new Map<string, DbUser>();
+
+      if (sellerIds.length > 0) {
+        const [r1, r2] = await Promise.all([
+          supabase.from("users").select("id,auth_user_id,full_name,email").in("auth_user_id", sellerIds),
+          supabase.from("users").select("id,auth_user_id,full_name,email").in("id", sellerIds),
+        ]);
+        const allUsers: DbUser[] = [
+          ...((r1.data as DbUser[]) || []),
+          ...((r2.data as DbUser[]) || []),
+        ];
+        for (const u of allUsers) {
+          if (u.auth_user_id) usersMap.set(u.auth_user_id, u);
+          usersMap.set(u.id, u);
+        }
+      }
+
+      const ui = ls.map((l): ListingUI => {
+        const u = (l.seller_id && usersMap.get(l.seller_id)) || null;
+        return {
+          id: l.id,
+          product_id: l.product_id,
+          title: l.title,
+          condition: toUiCondition(l.condition || "good"),
+          seller: { name: (u?.full_name || "Unknown").toString(), email: (u?.email || "—").toString() },
+          category: l.category || "Other",
+          price: Number(l.price ?? 0),
+          status: toUiStatus(l.status || "active"),
+          views: Number(l.views_count ?? 0),
+          thumb: l.thumbnail_url || null,
+        };
+      });
+
+      setRows(ui);
+      setLoading(false);
+    }
+
+    loadPage();
+  }, [statusTab, category, query, page]);
+
+  const start = totalMatching === 0 ? 0 : page * PAGE_SIZE + 1;
+  const end   = Math.min((page + 1) * PAGE_SIZE, totalMatching);
+  const totalPages = Math.max(1, Math.ceil(totalMatching / PAGE_SIZE));
+
+  /** ---- Export CSV of what's on screen (current `rows`) ---- */
+  function csvEscape(v: unknown): string {
+    const s = (v ?? "").toString();
+    // wrap in quotes if it contains comma, quote, or newline; escape quotes
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
+  function exportCsv(data: ListingUI[]) {
+    const headers = [
+      "ID",
+      "Product ID",
+      "Title",
+      "Condition",
+      "Seller Name",
+      "Seller Email",
+      "Category",
+      "Price",
+      "Status",
+      "Views",
+    ];
+    const lines = data.map(r =>
+      [
+        csvEscape(r.id),
+        csvEscape(r.product_id ?? ""),
+        csvEscape(r.title),
+        csvEscape(r.condition),
+        csvEscape(r.seller.name),
+        csvEscape(r.seller.email),
+        csvEscape(r.category),
+        csvEscape(Number(r.price).toFixed(2)),
+        csvEscape(r.status),
+        csvEscape(r.views),
+      ].join(",")
     );
-  }, [rows, query]);
+    const csv = [headers.join(","), ...lines].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const ts = new Date().toISOString().replace(/[:.]/g, "-");
+    a.href = url;
+    a.download = `listings_page-${page + 1}_${ts}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="admin-listings">
       <h1 className="page-title">Listings</h1>
 
-      {/* KPI cards (true table numbers) */}
+      {/* KPI cards */}
       <section className="kpi-grid">
-        <div className="kpi-card">
-          <div className="kpi-head">Total Listings</div>
-          <div className="kpi-num">{kpi.total}</div>
-          <div className="kpi-sub">Overall</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-head">Active Listings</div>
-          <div className="kpi-num">{kpi.active}</div>
-          <div className="kpi-sub">Active total count</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-head">Pending Review</div>
-          <div className="kpi-num">{kpi.pending}</div>
-          <div className="kpi-sub">Require approval</div>
-        </div>
-        <div className="kpi-card">
-          <div className="kpi-head">Total Value</div>
-          <div className="kpi-num">${kpi.value}</div>
-          <div className="kpi-sub">Sold items</div>
-        </div>
+        <div className="kpi-card"><div className="kpi-head">Total Listings</div><div className="kpi-num">{kpi.total}</div><div className="kpi-sub">Overall</div></div>
+        <div className="kpi-card"><div className="kpi-head">Active Listings</div><div className="kpi-num">{kpi.active}</div><div className="kpi-sub">Active total count</div></div>
+        <div className="kpi-card"><div className="kpi-head">Pending Review</div><div className="kpi-num">{kpi.pending}</div><div className="kpi-sub">Require approval</div></div>
+        <div className="kpi-card"><div className="kpi-head">Total Value</div><div className="kpi-num">${kpi.value}</div><div className="kpi-sub">Sold items</div></div>
       </section>
 
       <section className="block">
@@ -280,17 +265,16 @@ export default function ManageListings() {
             <div className="block-title">Manage Listings</div>
             <div className="block-sub">Review and manage all marketplace listings</div>
           </div>
-          <button className="btn btn--ghost" onClick={() => { loadKpis(); loadRows(); }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-              <path d="M5 20h14a1 1 0 0 0 1-1v-2H4v2a1 1 0 0 0 1 1Zm14-12h-4V4h-6v4H5l7 7 7-7Z" fill="currentColor" />
-            </svg>
-            Refresh
+
+          {/* Export CSV replaces the old Refresh button */}
+          <button className="btn btn--ghost" onClick={() => exportCsv(rows)}>
+            ⤓ Export
           </button>
         </div>
 
         {/* Tabs */}
         <div className="tabs">
-          {TABS.map((t) => (
+          {TABS.map(t => (
             <button
               key={t.key}
               className={`tab ${statusTab === t.key ? "is-active" : ""}`}
@@ -320,9 +304,7 @@ export default function ManageListings() {
             </button>
             <div className="filter-menu">
               {["All", "Books", "Electronics", "Furniture", "Clothing", "Other"].map((c) => (
-                <div key={c} className="filter-item" onClick={() => setCategory(c)}>
-                  {c}
-                </div>
+                <div key={c} className="filter-item" onClick={() => setCategory(c)}>{c}</div>
               ))}
             </div>
           </div>
@@ -361,19 +343,16 @@ export default function ManageListings() {
           {loading && !err && (
             <div className="tr"><div className="td" style={{ gridColumn: "1 / -1" }}>Loading…</div></div>
           )}
-          {!loading && !err && filtered.length === 0 && (
+          {!loading && !err && rows.length === 0 && (
             <div className="tr"><div className="td" style={{ gridColumn: "1 / -1" }}>No listings found.</div></div>
           )}
 
-          {filtered.map((l) => (
+          {rows.map((l) => (
             <div className="tr" key={l.id}>
               <div className="td chk">
                 <input type="checkbox" />
                 {l.thumb ? (
-                  <div
-                    className="thumb"
-                    style={{ backgroundImage: `url(${l.thumb})`, backgroundSize: "cover", backgroundPosition: "center" }}
-                  />
+                  <div className="thumb" style={{ backgroundImage: `url(${l.thumb})`, backgroundSize: "cover", backgroundPosition: "center" }} />
                 ) : (
                   <div className="thumb" />
                 )}
@@ -405,10 +384,26 @@ export default function ManageListings() {
           ))}
 
           <div className="tfoot">
-            <div>Showing {filtered.length} of {kpi.total} listings</div>
+            <div>
+              {totalMatching === 0
+                ? "Showing 0 of 0 listings"
+                : `Showing ${start}–${end} of ${totalMatching} listings`}
+            </div>
             <div className="pager">
-              <button className="btn btn--ghost" disabled>Previous</button>
-              <button className="btn btn--ghost" disabled>Next</button>
+              <button
+                className="btn btn--ghost"
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0 || loading}
+              >
+                Previous
+              </button>
+              <button
+                className="btn btn--ghost"
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={(page + 1) >= totalPages || loading}
+              >
+                Next
+              </button>
             </div>
           </div>
         </div>
