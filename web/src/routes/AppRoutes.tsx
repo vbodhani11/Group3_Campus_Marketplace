@@ -1,7 +1,6 @@
-// web/src/routes/AppRoutes.tsx
-import { Navigate } from "react-router-dom";
-import { BrowserRouter as Routes, Route } from "react-router-dom";
+import { Navigate, Routes, Route } from "react-router-dom";
 import { CartProvider } from "../context/CartContext";
+
 
 // public
 import LandingPage from "../pages/LandingPage";
@@ -60,15 +59,15 @@ export default function AppRoutes() {
         {/* <Route path="Account" element={<Account />} /> */}
 
         <Route path="/student" element={<StudentLayout />}>
-        <Route index element={<Navigate to="StudentDashboard" replace />} />
-        <Route path="dashboard" element={<StudentDashboard />} />
-        <Route path="sell" element={<Sell />} />
-        <Route path="listings" element={<Listings />} />
-        <Route path="product" element={<StudentProduct />} />
-        <Route path="messages" element={<Messages />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="listing/:id" element={<StudentProduct />} />
-        <Route path="cart" element={<Cart />} />
+          <Route index element={<Navigate to="StudentDashboard" replace />} />
+          <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="sell" element={<Sell />} />
+          <Route path="listings" element={<Listings />} />
+          <Route path="product" element={<StudentProduct />} />
+          <Route path="messages" element={<Messages />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="listing/:id" element={<StudentProduct />} />
+          <Route path="cart" element={<Cart />} />
         </Route>
 
 
