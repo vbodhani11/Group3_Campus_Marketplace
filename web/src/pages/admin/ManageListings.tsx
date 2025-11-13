@@ -15,12 +15,13 @@ type DbListing = {
   currency: string | null;
   thumbnail_url: string | null;
   views_count: number | null;
-  seller_id: string | null;
+  seller_id: string | null;        // usually auth.users.id
   created_at: string;
 };
 
 type DbUser = {
-  id: string;
+  id: string;                      // public.users PK
+  auth_user_id: string | null;     // links to auth.users.id (when present)
   full_name: string | null;
   email: string | null;
 };
@@ -126,20 +127,20 @@ export default function ManageListings() {
 
   /** load KPIs from entire table */
   async function loadKpis() {
-    // total count
     const totalQ = supabase.from("listings").select("*", { count: "exact", head: true });
-    const activeQ = supabase
-      .from("listings")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "active");
+    const activeQ = supabase.from("listings").select("*", { count: "exact", head: true }).eq("status", "active");
     const pendingQ = supabase
       .from("listings")
       .select("*", { count: "exact", head: true })
       .or("status.eq.pending,status.eq.draft");
     const soldValQ = supabase.from("listings").select("price,status");
 
-    const [{ count: total }, { count: active }, { count: pending }, { data: soldRows, error: soldErr }] =
-      await Promise.all([totalQ, activeQ, pendingQ, soldValQ]);
+    const [
+      { count: total },
+      { count: active },
+      { count: pending },
+      { data: soldRows, error: soldErr },
+    ] = await Promise.all([totalQ, activeQ, pendingQ, soldValQ]);
 
     const value = !soldErr
       ? (soldRows as DbListing[]).filter((r) => r.status === "sold").reduce((s, r) => s + Number(r.price || 0), 0)
@@ -153,14 +154,13 @@ export default function ManageListings() {
     });
   }
 
-  /** load listings for the table (with current filters except search) + LEFT join to users */
+  /** load listings for the table (with current filters except search) + robust LEFT join to users */
   async function loadRows() {
     setLoading(true);
     setErr(null);
 
     let q = supabase.from("listings").select(LISTING_FIELDS).order("created_at", { ascending: false });
 
-    // server-side filters we can push
     if (statusTab !== "all") q = q.eq("status", statusTab.toLowerCase());
     if (category !== "All") q = q.eq("category", category);
 
@@ -174,14 +174,33 @@ export default function ManageListings() {
 
     const ls = (listings || []) as DbListing[];
 
-    // LEFT JOIN to users by seller_id -> id (use full_name / email)
+    // collect seller ids from listings
     const sellerIds = Array.from(new Set(ls.map((l) => l.seller_id).filter(Boolean))) as string[];
+
+    // Build a users map keyed by BOTH auth_user_id and id,
+    // so listings.seller_id can match either scheme.
     const usersMap = new Map<string, DbUser>();
 
     if (sellerIds.length > 0) {
-      const { data: users, error: uErr } = await supabase.from("users").select("id,full_name,email").in("id", sellerIds);
-      if (!uErr && users) {
-        for (const u of users as DbUser[]) usersMap.set(u.id, u);
+      const q1 = supabase
+        .from("users")
+        .select("id,auth_user_id,full_name,email")
+        .in("auth_user_id", sellerIds);
+      const q2 = supabase
+        .from("users")
+        .select("id,auth_user_id,full_name,email")
+        .in("id", sellerIds);
+
+      const [r1, r2] = await Promise.all([q1, q2]);
+
+      const allUsers: DbUser[] = [
+        ...((r1.data as DbUser[]) || []),
+        ...((r2.data as DbUser[]) || []),
+      ];
+
+      for (const u of allUsers) {
+        if (u.auth_user_id) usersMap.set(u.auth_user_id, u); // key by auth uid
+        usersMap.set(u.id, u);                               // and by public.users id
       }
     }
 
@@ -207,10 +226,9 @@ export default function ManageListings() {
     setLoading(false);
   }
 
-  /** on first load + whenever filters change */
   useEffect(() => {
     loadKpis();
-  }, []); // KPIs are global; load once (or call again after mutations)
+  }, []);
 
   useEffect(() => {
     loadRows();
@@ -341,14 +359,10 @@ export default function ManageListings() {
             </div>
           )}
           {loading && !err && (
-            <div className="tr">
-              <div className="td" style={{ gridColumn: "1 / -1" }}>Loading…</div>
-            </div>
+            <div className="tr"><div className="td" style={{ gridColumn: "1 / -1" }}>Loading…</div></div>
           )}
           {!loading && !err && filtered.length === 0 && (
-            <div className="tr">
-              <div className="td" style={{ gridColumn: "1 / -1" }}>No listings found.</div>
-            </div>
+            <div className="tr"><div className="td" style={{ gridColumn: "1 / -1" }}>No listings found.</div></div>
           )}
 
           {filtered.map((l) => (
@@ -377,24 +391,16 @@ export default function ManageListings() {
                 </div>
               </div>
 
-              <div className="td category">
-                <Pill text={l.category} />
-              </div>
-
+              <div className="td category"><Pill text={l.category} /></div>
               <div className="td price">${Number(l.price).toLocaleString()}</div>
-
-              <div className="td status">
-                <Badge status={l.status} />
-              </div>
+              <div className="td status"><Badge status={l.status} /></div>
 
               <div className="td views">
                 <EyeIcon />
                 <span>{l.views}</span>
               </div>
 
-              <div className="td actions">
-                <Kebab />
-              </div>
+              <div className="td actions"><Kebab /></div>
             </div>
           ))}
 
