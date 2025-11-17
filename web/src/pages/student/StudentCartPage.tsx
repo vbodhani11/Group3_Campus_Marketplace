@@ -17,7 +17,7 @@ export default function StudentCart() {
         {cart.length === 0 ? (
           <div className="sc-empty">
             <p>No items yet.</p>
-            <a href="/listings" className="sc-btn sc-btn--gold">
+            <a href="/student/listings" className="sc-btn sc-btn--gold">
               Browse Listings
             </a>
           </div>
