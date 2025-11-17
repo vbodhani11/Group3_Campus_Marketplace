@@ -38,7 +38,6 @@
     margin-bottom: 20px;
   }
 
-  /* Layout split: inbox + chat */
   .message-layout {
     display: grid;
     grid-template-columns: 320px 1fr;
@@ -52,7 +51,6 @@
     }
   }
 
-  /* Inbox list */
   .inbox {
     border-right: 1px solid var(--line);
     background: #fafafa;
@@ -99,7 +97,6 @@
     }
   }
 
-  /* Chat section */
   .chat {
     display: flex;
     flex-direction: column;

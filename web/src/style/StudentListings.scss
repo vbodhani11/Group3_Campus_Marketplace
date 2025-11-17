@@ -21,7 +21,6 @@
   }
 }
 
-/* KPI cards (optional summary row) */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -40,7 +39,6 @@
   .kpi-sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
 }
 
-/* Listings container block */
 .block {
   background: var(--card);
   border: 1px solid var(--line);
@@ -56,7 +54,6 @@
   .block-sub { color:var(--muted); font-size:13px; }
 }
 
-/* Filters (search + category buttons, if added later) */
 .filters {
   display:flex; gap:10px; align-items:center; flex-wrap:wrap;
   margin:12px 0 18px;
@@ -74,14 +71,12 @@
   }
 }
 
-/* Listing Grid */
 .listing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 20px;
 }
 
-/* Listing Card */
 .listing-card {
   background: var(--card);
   border: 1px solid var(--line);
@@ -134,7 +129,6 @@
   }
 }
 
-/* Buttons (consistent with admin .btn) */
 .pfw-btn {
   display:inline-flex; align-items:center; justify-content:center;
   border:1px solid var(--gold);
@@ -164,7 +158,6 @@
   }
 }
 
-/* Empty state */
 .empty-state {
   text-align:center;
   margin-top: 60px;
@@ -176,7 +169,6 @@
   }
 }
 
-/* Responsive */
 @media (max-width: 1100px) {
   .kpi-grid { grid-template-columns: 1fr 1fr; }
 }

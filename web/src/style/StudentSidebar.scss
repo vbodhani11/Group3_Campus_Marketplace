@@ -2,7 +2,7 @@
 
 .portal {
   position: fixed;
-  top: 64px;               /* below the header */
+  top: 64px;               
   left: 0;
   z-index: 41;
   width: 260px;
@@ -17,24 +17,23 @@
 
   &.open { transform: translateX(0); }
 
-  /* ---- tighten header-to-first-item spacing (no visible gap) ---- */
   .portal-head {
-    padding: 10px 16px 0;     /* ↓ no bottom padding */
-    margin: 0;                /* ensure no default margins */
+    padding: 10px 16px 0;     
+    margin: 0;               
     font-weight: 800;
     color: $text;
     line-height: 1.1;
   }
 
   .portal-nav {
-    padding: 6px 12px 16px;   /* very small top padding for touch, but no gap */
-    margin: 0;                /* kill any UA nav margins */
+    padding: 6px 12px 16px;   
+    margin: 0;                
     display: grid;
-    gap: 0;                   /* no intrinsic vertical gap */
+    gap: 0;                 
 
     .navitem {
       display: block;
-      margin: 0;              /* ensure first item hugs the header */
+      margin: 0;             
       padding: 10px 12px;
       border-radius: 10px;
       color: #0f172a;
@@ -44,7 +43,6 @@
       &:hover, &.active { background: #f9fafb; border-color: $border; }
     }
 
-    /* absolute guarantee: no space above first item */
     .navitem:first-child { margin-top: 0 !important; }
   }
 

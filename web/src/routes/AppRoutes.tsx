@@ -50,14 +50,6 @@ export default function AppRoutes() {
         <Route path="profile" element={<AdminProfile />} />
       </Route>
 
-      {/* student */}
-        {/* <Route path="/student" element={<Navigate to="/Listings" replace />} /> */}
-        {/* <Route path="Listings" element={<StudDashboard />} /> */}
-        {/* <Route path="/student/dashboard" element={<StudDashboard />} /> */}
-        {/* <Route path="Sell" element={<Sell />} /> */}
-        {/* <Route path="Messages" element={<Messages />} /> */}
-        {/* <Route path="Account" element={<Account />} /> */}
-
         <Route path="/student" element={<StudentLayout />}>
           <Route index element={<Navigate to="StudentDashboard" replace />} />
           <Route path="dashboard" element={<StudentDashboard />} />
