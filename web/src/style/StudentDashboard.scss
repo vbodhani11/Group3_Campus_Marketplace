@@ -1,0 +1,39 @@
+@use "./_theme.scss" as *;
+
+.dash {
+  .dash-header {
+    margin-bottom: 18px;
+    h1 { font-size: 20px; font-weight: 800; color: $text; }
+  }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+
+    @media (max-width: 1100px) { grid-template-columns: repeat(2,1fr); }
+    @media (max-width: 640px) { grid-template-columns: 1fr; }
+  }
+
+  .kpi {
+    .kpi-title { color: #374151; font-weight: 700; margin-bottom: 6px; }
+    .kpi-value { font-size: 26px; font-weight: 800; color: $text; line-height: 1.1; }
+    .kpi-delta { margin-top: 6px; font-weight: 700; font-size: .9rem; }
+    .kpi-delta.up { color: #16a34a; }
+    .kpi-delta.down { color: #dc2626; }
+  }
+
+  .activity { padding: 0;
+    .activity-title { padding: 16px; font-weight: 800; color: $text; border-bottom: 1px solid $border; }
+    .row { display: flex; align-items: center; justify-content: space-between; padding: 16px;
+           border-top: 1px solid $border;
+      .time { color: $muted; font-size: .9rem; }
+    }
+    .badge { padding: 4px 10px; border-radius: 999px; font-size: .8rem; font-weight: 800;
+      &.ok { background: rgba(14,165,233,.12); color: #0ea5e9; }
+      &.warn { background: #fff4d6; color: #b45309; }
+      &.danger { background: #fee2e2; color: #b91c1c; }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+@use "./_theme.scss" as *;
+
+.student-shell { background: $bg; min-height: 100vh; display: flex; flex-direction: column; }
+
+.student-frame, .student-body {        
+  display: flex;
+  flex: 1 1 auto;
+  min-height: calc(100vh - 64px);  
+}
+
+.student-main, .student-content {      
+  flex: 1 1 auto;
+  padding: 24px 28px;             
+}
+
+.portal-overlay {
+  position: fixed; inset: 64px 0 0 0; background: rgba(0,0,0,.2); z-index: 40;
+}
+
+.card { background: #fff; border: 1px solid $border; border-radius: $radius; box-shadow: $shadow; padding: 16px; }

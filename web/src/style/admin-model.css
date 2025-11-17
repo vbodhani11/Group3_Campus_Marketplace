@@ -1,0 +1,111 @@
+/* ===== Reusable modal (Add User) ===== */
+:root {
+  --panel: #ffffff;
+  --muted: #f3f4f6;
+  --line: #e5e7eb;
+  --text: #111827;
+  --text-dim: #6b7280;
+  --brand: #597fd1;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+}
+
+.modal-sheet {
+  width: 640px;
+  max-width: calc(100% - 32px);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 8px 16px;
+}
+.modal-head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+.modal-head p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.modal-head .icon-btn {
+  border: 1px solid var(--line);
+  background: var(--muted);
+  color: var(--text);
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.modal-alert {
+  margin: 0 16px 8px;
+  background: #3b1620;
+  border: 1px solid #6b2735;
+  color: #ffd0d6;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.modal-body {
+  padding: 8px 16px 16px;
+  display: grid;
+  gap: 12px;
+}
+.modal-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.modal-body label span {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.modal-body label input, .modal-body label select {
+  background: var(--muted);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px;
+  outline: none;
+}
+.modal-body .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.modal-body .modal-actions .btn {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.modal-body .modal-actions .btn.primary {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.modal-body .modal-actions .btn.ghost {
+  background: transparent;
+}/*# sourceMappingURL=admin-model.css.map */

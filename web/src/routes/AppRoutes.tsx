@@ -1,5 +1,6 @@
-// web/src/routes/AppRoutes.tsx
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Navigate, Routes, Route } from "react-router-dom";
+import { CartProvider } from "../context/CartContext";
+
 
 // public
 import LandingPage from "../pages/LandingPage";
@@ -27,6 +28,7 @@ import ListingDetailPage from "../pages/student/ListingDetails";
 
 export default function AppRoutes() {
   return (
+    <CartProvider>
     <Routes>
       {/* public */}
       <Route path="/" element={<LandingPage />} />
@@ -55,8 +57,9 @@ export default function AppRoutes() {
       <Route path="Account" element={<Account />} />
       <Route path="/listing/:id" element={<ListingDetailPage />} />
 
-      {/* 404 */}
+        {/* 404 */}
       <Route path="*" element={<div style={{ padding: 20 }}>Not Found</div>} />
     </Routes>
+    </CartProvider>
   );
 }
