@@ -15,6 +15,7 @@ import ManageListings from "../pages/admin/ManageListings";
 import Analytics from "../pages/admin/Analytics";
 import Settings from "../pages/admin/Settings";
 import AdminProfile from "../pages/admin/AdminProfile";
+import ReportsPage from "../pages/admin/Reports";
 
 // student
 import Listings from "../pages/student/Listings";
@@ -37,6 +38,7 @@ export default function AppRoutes() {
         <Route path="analytics" element={<Analytics />} />
         <Route path="settings" element={<Settings />} />
         <Route path="profile" element={<AdminProfile />} />
+        <Route path="/admin/reports" element={<ReportsPage />} />
       </Route>
 
       {/* student */}
