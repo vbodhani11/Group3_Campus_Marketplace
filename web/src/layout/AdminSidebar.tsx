@@ -86,19 +86,22 @@ export default function AdminSidebar({ open, onClose }: Props) {
         <div>
           <div className="portal-head">Admin Portal</div>
           <nav className="portal-nav">
-            <NavLink to="/admin/dashboard" onClick={closeOnClick} className="navitem">
+            <NavLink to="/admin/dashboard" onClick={closeOnClick} className="navitem"><span className="icon">📊</span>
               Dashboard
             </NavLink>
-            <NavLink to="/admin/manage-users" onClick={closeOnClick} className="navitem">
+            <NavLink to="/admin/manage-users" onClick={closeOnClick} className="navitem"><span className="icon">👤</span>
               Users
             </NavLink>
-            <NavLink to="/admin/manage-listings" onClick={closeOnClick} className="navitem">
+            <NavLink to="/admin/manage-listings" onClick={closeOnClick} className="navitem"><span className="icon">📦</span>
               Listings
             </NavLink>
-            <NavLink to="/admin/analytics" onClick={closeOnClick} className="navitem">
+            <NavLink to="/admin/reports" onClick={closeOnClick} className="navitem"><span className="icon">🚩</span>
+              Reports
+            </NavLink>
+            <NavLink to="/admin/analytics" onClick={closeOnClick} className="navitem"><span className="icon">📈</span>
               Analytics
             </NavLink>
-            <NavLink to="/admin/settings" onClick={closeOnClick} className="navitem">
+            <NavLink to="/admin/settings" onClick={closeOnClick} className="navitem"><span className="icon">⚙️</span>
               Settings
             </NavLink>
           </nav>
