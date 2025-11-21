@@ -24,7 +24,7 @@ export default function Login() {
         .from("users")
         .select("*")
         .eq("email", email)
-        .eq("password", password) 
+        .eq("password", password) // NOTE: for real apps, never store plain passwords!
         .single();
 
       if (error || !data) {
@@ -38,18 +38,31 @@ export default function Login() {
         return;
       }
 
+      // 🔹 Record login event for analytics
+      try {
+        await supabase.from("user_logins").insert({
+          user_id: data.id,
+          // If you created extra columns on user_logins you can add them here:
+          // user_agent: navigator.userAgent,
+          // logged_in_at: new Date().toISOString(),
+        });
+      } catch (logErr) {
+        console.error("Failed to record login event", logErr);
+        // don't block login if analytics write fails
+      }
+
       // Persist a lightweight session for the UI (sidebar, etc.)
       localStorage.setItem(
         "cm_user",
         JSON.stringify({
-          id: data.id,                // uuid/string
-          email: data.email,          // string
-          full_name: data.full_name,  // string
-          role: data.role,            // "admin" | "student"
+          id: data.id, // uuid/string
+          email: data.email,
+          full_name: data.full_name,
+          role: data.role as Role,
         })
       );
 
-      // Route by role
+      // Route by role (your AppRoutes should already have these paths)
       if (data.role === "admin") {
         navigate("/admin", { replace: true });
       } else {
