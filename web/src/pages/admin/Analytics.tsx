@@ -38,12 +38,6 @@ type ListingRow = {
   seller_id: string | null;
 };
 
-type LoginRow = {
-  id: string;
-  user_id: string | null;
-  logged_in_at: string;
-};
-
 type KPI = {
   revenue: number;
   sales: number;
@@ -85,20 +79,7 @@ type AnalyticsData = {
   activityStats: ActivityStats;
 };
 
-const MONTH_LABELS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -116,7 +97,7 @@ function normalizeCategory(cat: string | null): { key: string; label: string } {
   return { key: raw, label };
 }
 
-function buildAnalytics(listings: ListingRow[], logins: LoginRow[]): AnalyticsData {
+function buildAnalytics(listings: ListingRow[]): AnalyticsData {
   if (!listings || listings.length === 0) {
     return {
       kpi: {
@@ -162,7 +143,7 @@ function buildAnalytics(listings: ListingRow[], logins: LoginRow[]): AnalyticsDa
   const soldListings = listings.filter((l) => (l.status || "").toLowerCase() === "sold");
   const activeListings = listings.filter((l) => (l.status || "").toLowerCase() === "active");
 
-  const getQty = (l: ListingRow) => l.quantity ?? 1;
+  const getQty = (l: ListingRow) => (l.quantity ?? 1);
 
   // ---------- KPI ----------
   const totalRevenue = soldListings.reduce((sum, l) => sum + (l.price || 0) * getQty(l), 0);
@@ -196,7 +177,6 @@ function buildAnalytics(listings: ListingRow[], logins: LoginRow[]): AnalyticsDa
   const pctChange = (curr: number, prev: number) =>
     prev > 0 ? `${((100 * (curr - prev)) / prev).toFixed(1)}% from last month` : "0% from last month";
 
-  // "new this week" – last 7 days
   const weekCutoff = new Date();
   weekCutoff.setDate(now.getDate() - 7);
   const newThisWeek = activeListings.filter((l) => new Date(l.created_at) >= weekCutoff).length;
@@ -286,7 +266,7 @@ function buildAnalytics(listings: ListingRow[], logins: LoginRow[]): AnalyticsDa
     count: entry.sales,
   }));
 
-  // ---------- Weekly Activity (ALL TIME BY WEEKDAY) ----------
+  // ---------- Weekly Activity ----------
   const weeklyMap: Record<string, WeeklyActivityRow> = {
     Mon: { day: "Mon", listings: 0, sales: 0, views: 0 },
     Tue: { day: "Tue", listings: 0, sales: 0, views: 0 },
@@ -297,26 +277,31 @@ function buildAnalytics(listings: ListingRow[], logins: LoginRow[]): AnalyticsDa
     Sun: { day: "Sun", listings: 0, sales: 0, views: 0 },
   };
 
-  // new listings + views by day of week (all time)
+  const last7 = new Date();
+  last7.setDate(now.getDate() - 7);
+
   listings.forEach((l) => {
     const created = new Date(l.created_at);
-    const dayLabel = DOW_LABELS[created.getDay()];
-    weeklyMap[dayLabel].listings += 1;
-    weeklyMap[dayLabel].views += l.views_count || 0;
+    if (created >= last7) {
+      const dayLabel = DOW_LABELS[created.getDay()];
+      weeklyMap[dayLabel].listings += 1;
+      weeklyMap[dayLabel].views += l.views_count || 0;
+    }
   });
 
-  // sales by day of week (prefer sold_at if present)
   soldListings.forEach((l) => {
-    const d = l.sold_at ? new Date(l.sold_at) : new Date(l.created_at);
-    const dayLabel = DOW_LABELS[d.getDay()];
-    weeklyMap[dayLabel].sales += getQty(l);
+    if (!l.sold_at) return;
+    const sold = new Date(l.sold_at);
+    if (sold >= last7) {
+      const dayLabel = DOW_LABELS[sold.getDay()];
+      weeklyMap[dayLabel].sales += getQty(l);
+    }
   });
 
   const weeklyActivity: WeeklyActivityRow[] = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
     (d) => weeklyMap[d]
   );
 
-  // Peak day by views
   let peakDay = "—";
   let peakDayViews = 0;
   weeklyActivity.forEach((row) => {
@@ -326,7 +311,7 @@ function buildAnalytics(listings: ListingRow[], logins: LoginRow[]): AnalyticsDa
     }
   });
 
-  // ---------- Most Active Time (LOGIN-BASED) ----------
+  // time-of-day buckets for "Most Active Time"
   const timeBuckets = {
     night: { label: "12–6 AM", sub: "Late night activity", count: 0 },
     morning: { label: "6–12 AM", sub: "Morning activity", count: 0 },
@@ -334,27 +319,14 @@ function buildAnalytics(listings: ListingRow[], logins: LoginRow[]): AnalyticsDa
     evening: { label: "6–12 PM", sub: "Evening peak", count: 0 },
   };
 
-  if (logins && logins.length > 0) {
-    // use login timestamps
-    logins.forEach((ev) => {
-      const d = new Date(ev.logged_in_at);
-      const h = d.getHours();
-      if (h < 6) timeBuckets.night.count += 1;
-      else if (h < 12) timeBuckets.morning.count += 1;
-      else if (h < 18) timeBuckets.afternoon.count += 1;
-      else timeBuckets.evening.count += 1;
-    });
-  } else {
-    // fallback: use listing created_at if no logins yet
-    listings.forEach((l) => {
-      const d = new Date(l.created_at);
-      const h = d.getHours();
-      if (h < 6) timeBuckets.night.count += 1;
-      else if (h < 12) timeBuckets.morning.count += 1;
-      else if (h < 18) timeBuckets.afternoon.count += 1;
-      else timeBuckets.evening.count += 1;
-    });
-  }
+  listings.forEach((l) => {
+    const d = new Date(l.created_at);
+    const h = d.getHours();
+    if (h < 6) timeBuckets.night.count += 1;
+    else if (h < 12) timeBuckets.morning.count += 1;
+    else if (h < 18) timeBuckets.afternoon.count += 1;
+    else timeBuckets.evening.count += 1;
+  });
 
   const mostActiveBucket = Object.values(timeBuckets).reduce((best, curr) =>
     curr.count > best.count ? curr : best
@@ -403,36 +375,22 @@ const titleMap = { listings: "New Listings", sales: "Sales", views: "Views" };
 export default function Analytics() {
   const [tab, setTab] = useState<TabKey>("overview");
   const [listings, setListings] = useState<ListingRow[]>([]);
-  const [logins, setLogins] = useState<LoginRow[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const [
-        { data: listingsData, error: listingsError },
-        { data: loginData, error: loginError },
-      ] = await Promise.all([
-        supabase
-          .from("listings")
-          .select(
-            "id,title,price,status,category,quantity,created_at,sold_at,views_count,seller_id"
-          ),
-        supabase.from("user_logins").select("id,user_id,logged_in_at"),
-      ]);
+    const fetchListings = async () => {
+      const { data, error } = await supabase
+        .from("listings")
+        .select("id,title,price,status,category,quantity,created_at,sold_at,views_count,seller_id");
 
-      if (listingsError) {
-        console.error("Error loading listings analytics data", listingsError);
-      } else {
-        setListings((listingsData || []) as ListingRow[]);
+      if (error) {
+        console.error("Error loading analytics data", error);
+        return;
       }
 
-      if (loginError) {
-        console.error("Error loading login analytics data", loginError);
-      } else {
-        setLogins((loginData || []) as LoginRow[]);
-      }
+      setListings((data || []) as ListingRow[]);
     };
 
-    fetchData();
+    fetchListings();
   }, []);
 
   const {
@@ -444,7 +402,7 @@ export default function Analytics() {
     salesByCategory,
     weeklyActivity,
     activityStats,
-  } = useMemo(() => buildAnalytics(listings, logins), [listings, logins]);
+  } = useMemo(() => buildAnalytics(listings), [listings]);
 
   const totals = useMemo(
     () => ({

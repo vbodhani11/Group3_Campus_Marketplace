@@ -15,7 +15,7 @@ type DbUser = {
 };
 
 type DbListing = {
-  id: string; // UUID
+  id: string; // UUID now
   product_id: string | null;
   title: string;
   category: string | null;
@@ -31,15 +31,15 @@ type DbReport = {
   description: string | null;
   reporter_id: string | null;
   reported_user_id: string | null;
-  reported_listing_id: string | null; // UUID
+  reported_listing_id: string | null; // UUID now
   priority: ReportPriority;
   status: ReportStatus;
   created_at: string;
 
   // joined data
-  reporter: DbUser | null; // who reported
-  user: DbUser | null; // reported user
-  listing: DbListing | null; // reported listing
+  reporter: DbUser | null;
+  user: DbUser | null;
+  listing: DbListing | null;
 };
 
 type TabKey =
@@ -382,7 +382,6 @@ export default function ReportsPage() {
               <thead>
                 <tr>
                   <th>Report Details</th>
-                  <th>Reported User</th>
                   <th>Reported Item</th>
                   <th>Reporter</th>
                   <th>Priority</th>
@@ -405,38 +404,32 @@ export default function ReportsPage() {
                       </div>
                     </td>
 
-                    {/* Reported user */}
-                    <td className="col-reported-user">
-                      {report.user ? (
-                        <div>
-                          <div className="reporter-name">
-                            {report.user.full_name || "User account"}
-                          </div>
-                          <div className="reporter-email">
-                            {report.user.email}
-                          </div>
-                        </div>
-                      ) : (
-                        <span>-</span>
-                      )}
-                    </td>
-
                     {/* Reported item */}
                     <td className="col-item">
-                      {report.listing ? (
-                        <div>
-                          <div className="item-title">
-                            {report.listing.title}
-                          </div>
-                          {report.listing.category && (
-                            <div className="item-sub">
-                              {report.listing.category}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span>-</span>
-                      )}
+                        {report.report_type === "listing" && report.listing ? (
+                    <div>
+                    {/* main item title */}
+                    <div className="item-title">
+                        {report.listing.title}
+                    </div>
+                    {/* small category text under it */}
+                    {report.listing.category && (
+                    <div className="item-sub">
+                        {report.listing.category}
+                    </div>
+                    )}
+                    </div>
+                    ) : report.report_type === "user" && report.user ? (
+                    <div>
+                    {/* show which user account is being reported */}
+                    <div className="item-title">
+                        {report.user.full_name || "User account"}
+                    </div>
+                    <div className="item-sub">User account</div>
+                    </div>
+                    ) : (
+                    <span>-</span>
+                    )}
                     </td>
 
                     {/* Reporter */}
@@ -466,7 +459,9 @@ export default function ReportsPage() {
                     </td>
 
                     {/* Date */}
-                    <td className="col-date">{formatDate(report.created_at)}</td>
+                    <td className="col-date">
+                      {formatDate(report.created_at)}
+                    </td>
 
                     {/* Actions */}
                     <td className="col-actions">

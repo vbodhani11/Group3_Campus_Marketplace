@@ -1,0 +1,37 @@
+/* Shared palette, sizes, and helpers */
+.student-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: 64px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #d4b483;
+  border-bottom: 1px solid #d4b483;
+}
+.student-header .brand {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.student-header .cart {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.student-header .cart .profile {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #d4b483;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111827;
+  transition: background 0.2s ease;
+}/*# sourceMappingURL=StudentHeader.css.map */

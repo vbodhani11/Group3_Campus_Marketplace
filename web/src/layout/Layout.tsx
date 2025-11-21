@@ -18,11 +18,10 @@ export default function Layout({ title, children, full = false }: Props) {
             <span>Marketplace</span>
           </div>
           <nav className="pfw-nav">
-            <NavLink to="/listings" className={({isActive})=>isActive?'pfw-active':undefined}>Listings</NavLink>
+            <NavLink to="/Listings" className={({isActive})=>isActive?'pfw-active':undefined}>Listings</NavLink>
             <NavLink to="/sell"     className={({isActive})=>isActive?'pfw-active':undefined}>Sell</NavLink>
             <NavLink to="/messages" className={({isActive})=>isActive?'pfw-active':undefined}>Messages</NavLink>
             <NavLink to="/account"  className={({isActive})=>isActive?'pfw-active':undefined}>Account</NavLink>
-            <NavLink to="/login"    className={({isActive})=>isActive?'pfw-active':undefined}>Login</NavLink>
           </nav>
         </div>
       </header>
@@ -47,7 +46,7 @@ export default function Layout({ title, children, full = false }: Props) {
                              : 'pfw-container pfw-row'}>
           <span>© {new Date().getFullYear()} Campus Marketplace</span>
           <span>•</span>
-          <NavLink to="/listings">Browse</NavLink>
+          <NavLink to="/listings">Listings</NavLink>
           <NavLink to="/sell">Sell</NavLink>
           <NavLink to="/messages">Messages</NavLink>
           <NavLink to="/account">Account</NavLink>
