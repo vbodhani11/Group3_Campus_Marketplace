@@ -1,7 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import "../../style/Register.scss";
+
+type Restrictions = {
+  campusEmailRequired?: boolean;
+  requireEmailVerification?: boolean;
+  maxActiveListings?: number;
+};
+
+const SETTINGS_KEY = "default";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -11,6 +19,33 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const [restrictions, setRestrictions] = useState<Restrictions | null>(null);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
+  // Load restrictions from app_settings so we know if .edu is required
+  useEffect(() => {
+    const loadSettings = async () => {
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("restrictions")
+        .eq("key", SETTINGS_KEY)
+        .single();
+
+      if (error) {
+        console.warn("No app_settings row or error loading settings:", error.message);
+      }
+
+      if (data?.restrictions) {
+        setRestrictions(data.restrictions as Restrictions);
+      } else {
+        setRestrictions({});
+      }
+      setSettingsLoaded(true);
+    };
+
+    loadSettings();
+  }, []);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
@@ -19,6 +54,12 @@ export default function Register() {
     try {
       if (password !== confirmPassword) {
         alert("Passwords do not match!");
+        return;
+      }
+
+      const campusRequired = restrictions?.campusEmailRequired === true;
+      if (campusRequired && !email.toLowerCase().endsWith(".edu")) {
+        alert("You must use a campus (.edu) email address to create an account.");
         return;
       }
 
@@ -33,36 +74,44 @@ export default function Register() {
         },
       });
 
-      if (authError || !authData.user) {
+      if (authError || !authData?.user) {
         console.error("Auth signUp error:", authError);
         alert(authError?.message || "Error creating account.");
         return;
       }
 
-      const authUser = authData.user; // has authUser.id, authUser.email, ...
+      const authUser = authData.user;
 
-      // 2) Create matching entry in public.users
-      //    id will use its own default; we just link via auth_user_id
-      const { error: profileError } = await supabase.from("users").insert([
-        {
-          full_name: name,
-          email,
-          password,              // ⚠️ plain-text just to match your current Login.tsx
-          auth_user_id: authUser.id, // links to auth.users
-          // role, is_active, status, etc. will use your table defaults
-        },
-      ]);
+      // 2) Upsert matching entry in public.users (insert or update by email)
+      //    IMPORTANT: include `password` here because your column is NOT NULL.
+      const { error: profileError } = await supabase
+        .from("users")
+        .upsert(
+          {
+            full_name: name,
+            email,
+            password,           // ✅ satisfies NOT NULL constraint
+            auth_user_id: authUser.id,
+            // DO NOT send role here; let DB default / existing value handle it
+          },
+          {
+            onConflict: "email", // uses your users_email_unique constraint
+          }
+        );
 
       if (profileError) {
         console.error("Error saving data in public.users:", profileError);
         alert(
-          "Account created in auth, but failed to save profile: " +
+          "Your account was created, but we had trouble saving your profile: " +
             profileError.message
         );
         return;
       }
 
-      alert("Registration successful! You can now log in.");
+      // 3) Tell user to verify email then log in
+      alert(
+        "Registration successful! Please check your email to verify your account before logging in."
+      );
       navigate("/login");
     } finally {
       setSubmitting(false);
@@ -92,6 +141,11 @@ export default function Register() {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
+          {settingsLoaded && restrictions?.campusEmailRequired && (
+            <p style={{ fontSize: "0.8rem", color: "#777" }}>
+              Only campus (.edu) email addresses are allowed.
+            </p>
+          )}
 
           <label>Password *</label>
           <input
