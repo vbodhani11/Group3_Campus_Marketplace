@@ -21,7 +21,7 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
 
   const [restrictions, setRestrictions] = useState<Restrictions | null>(null);
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [, setSettingsLoaded] = useState(false);
 
   const navigate = useNavigate();
 
@@ -224,11 +224,6 @@ export default function Login() {
             autoComplete="username"
             required
           />
-          {settingsLoaded && restrictions?.campusEmailRequired && role === "student" && (
-            <p style={{ fontSize: "0.8rem", color: "#777" }}>
-              Only campus (.edu) email addresses are allowed for student accounts.
-            </p>
-          )}
 
           <label>Password *</label>
           <input
