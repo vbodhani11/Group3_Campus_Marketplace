@@ -1,7 +1,80 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "../../style/admin-settings.scss";
+import { supabase } from "../../lib/supabaseClient";
 
 type Tab = "general" | "categories" | "moderation" | "payments" | "notifications";
+
+const SETTINGS_KEY = "default";
+
+// --- DEFAULT VALUES (same as your current hard-coded ones) ---
+const DEFAULT_PLATFORM = {
+  name: "Campus Marketplace",
+  tagline: "Buy and Sell with Fellow Students",
+  desc: "A trusted marketplace for students to buy and sell items within the campus community.",
+  email: "support@campus.edu",
+};
+
+const DEFAULT_POLICIES = {
+  autoApprove: false,
+  maxPrice: 10000,
+  defaultDuration: "30 days",
+  allowNegotiation: true,
+};
+
+const DEFAULT_CATS: string[] = [
+  "Electronics",
+  "Books",
+  "Furniture",
+  "Clothing",
+  "Sports & Outdoors",
+  "Home & Garden",
+];
+
+const DEFAULT_CAT_SETTINGS = {
+  requireSelection: true,
+  allowMultiple: false,
+};
+
+const DEFAULT_MOD = {
+  manualApproval: true,
+  profanityFilter: true,
+  duplicateDetect: true,
+  autoApproveAfter: "24 hours",
+};
+
+const DEFAULT_RESTRICTIONS = {
+  requireEmailVerification: true,
+  campusEmailRequired: true,
+  maxActiveListings: 10,
+};
+
+const DEFAULT_PAYMENTS = {
+  enableOnline: false,
+  methods: {
+    cashOnPickup: true,
+    venmo: true,
+    paypal: false,
+    card: false,
+  },
+  feesEnabled: false,
+  platformFeePct: 5,
+  minFee: 0.5,
+};
+
+const DEFAULT_NOTIF = {
+  email: {
+    newListing: true,
+    sale: true,
+    reviewReminders: true,
+    weeklyReports: true,
+  },
+  user: {
+    approved: true,
+    rejected: true,
+    newMessage: false,
+    priceDrop: false,
+  },
+};
 
 type ToggleProps = { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean };
 function Toggle({ checked, onChange, disabled }: ToggleProps) {
@@ -42,80 +115,60 @@ function FieldRow({
 
 export default function Settings() {
   const [tab, setTab] = useState<Tab>("general");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // General
-  const [platform, setPlatform] = useState({
-    name: "Campus Marketplace",
-    tagline: "Buy and Sell with Fellow Students",
-    desc: "A trusted marketplace for students to buy and sell items within the campus community.",
-    email: "support@campus.edu",
-  });
-  const [policies, setPolicies] = useState({
-    autoApprove: false,
-    maxPrice: 10000,
-    defaultDuration: "30 days",
-    allowNegotiation: true,
-  });
+  const [platform, setPlatform] = useState(DEFAULT_PLATFORM);
+  const [policies, setPolicies] = useState(DEFAULT_POLICIES);
 
   // Categories
   const [newCat, setNewCat] = useState("");
-  const [cats, setCats] = useState<string[]>([
-    "Electronics",
-    "Books",
-    "Furniture",
-    "Clothing",
-    "Sports & Outdoors",
-    "Home & Garden",
-  ]);
-  const [catSettings, setCatSettings] = useState({
-    requireSelection: true,
-    allowMultiple: false,
-  });
+  const [cats, setCats] = useState<string[]>(DEFAULT_CATS);
+  const [catSettings, setCatSettings] = useState(DEFAULT_CAT_SETTINGS);
 
   // Moderation
-  const [mod, setMod] = useState({
-    manualApproval: true,
-    profanityFilter: true,
-    duplicateDetect: true,
-    autoApproveAfter: "24 hours",
-  });
-  const [restrictions, setRestrictions] = useState({
-    requireEmailVerification: true,
-    campusEmailRequired: true,
-    maxActiveListings: 10,
-  });
+  const [mod, setMod] = useState(DEFAULT_MOD);
+  const [restrictions, setRestrictions] = useState(DEFAULT_RESTRICTIONS);
 
   // Payments
-  const [payments, setPayments] = useState({
-    enableOnline: false,
-    methods: {
-      cashOnPickup: true,
-      venmo: true,
-      paypal: false,
-      card: false,
-    },
-    feesEnabled: false,
-    platformFeePct: 5,
-    minFee: 0.5,
-  });
+  const [payments, setPayments] = useState(DEFAULT_PAYMENTS);
 
   // Notifications
-  const [notif, setNotif] = useState({
-    email: {
-      newListing: true,
-      sale: true,
-      reviewReminders: true,
-      weeklyReports: true,
-    },
-    user: {
-      approved: true,
-      rejected: true,
-      newMessage: false,
-      priceDrop: false,
-    },
-  });
+  const [notif, setNotif] = useState(DEFAULT_NOTIF);
 
-  const canSave = useMemo(() => true, []);
+  // Load settings from Supabase on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("*")
+        .eq("key", SETTINGS_KEY)
+        .single();
+
+      if (error || !data) {
+        console.log("Using default settings (no row yet or error):", error?.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data.platform) setPlatform(data.platform);
+      if (data.policies) setPolicies(data.policies);
+      if (data.categories) setCats(data.categories);
+      if (data.cat_settings) setCatSettings(data.cat_settings);
+      if (data.moderation) setMod(data.moderation);
+      if (data.restrictions) setRestrictions(data.restrictions);
+      if (data.payments) setPayments(data.payments);
+      if (data.notifications) setNotif(data.notifications);
+
+      setLoading(false);
+    };
+
+    fetchSettings();
+  }, []);
+
+  const canSave = useMemo(() => !loading, [loading]);
 
   const addCategory = () => {
     const v = newCat.trim();
@@ -124,6 +177,30 @@ export default function Settings() {
     setNewCat("");
   };
   const removeCategory = (name: string) => setCats(cats.filter((c) => c !== name));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        key: SETTINGS_KEY,
+        platform,
+        policies,
+        categories: cats,
+        cat_settings: catSettings,
+        moderation: mod,
+        restrictions,
+        payments,
+        notifications: notif,
+      };
+
+      const { error } = await supabase.from("app_settings").upsert(payload);
+      if (error) {
+        console.error("Error saving settings:", error.message);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="admin-settings">
@@ -204,7 +281,12 @@ export default function Settings() {
               <FieldRow
                 label="Auto-approve Listings"
                 sub="Automatically approve new listings without review"
-                right={<Toggle checked={policies.autoApprove} onChange={(v) => setPolicies({ ...policies, autoApprove: v })} />}
+                right={
+                  <Toggle
+                    checked={policies.autoApprove}
+                    onChange={(v) => setPolicies({ ...policies, autoApprove: v })}
+                  />
+                }
               />
 
               <FieldRow label="Maximum Listing Price ($)">
@@ -242,7 +324,11 @@ export default function Settings() {
             </section>
 
             <div className="savebar">
-              <button className="btn btn--primary" disabled={!canSave}>
+              <button
+                className="btn btn--primary"
+                disabled={!canSave || saving}
+                onClick={handleSave}
+              >
                 <span className="ico-disk" />
                 Save Changes
               </button>
@@ -314,7 +400,7 @@ export default function Settings() {
             </section>
 
             <div className="savebar">
-              <button className="btn btn--primary">
+              <button className="btn btn--primary" disabled={saving} onClick={handleSave}>
                 <span className="ico-disk" />
                 Save Changes
               </button>
@@ -389,13 +475,15 @@ export default function Settings() {
                   type="number"
                   className="input"
                   value={restrictions.maxActiveListings}
-                  onChange={(e) => setRestrictions({ ...restrictions, maxActiveListings: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setRestrictions({ ...restrictions, maxActiveListings: Number(e.target.value) })
+                  }
                 />
               </FieldRow>
             </section>
 
             <div className="savebar">
-              <button className="btn btn--primary">
+              <button className="btn btn--primary" disabled={saving} onClick={handleSave}>
                 <span className="ico-disk" />
                 Save Changes
               </button>
@@ -414,7 +502,12 @@ export default function Settings() {
               <FieldRow
                 label="Enable Online Payments"
                 sub="Allow buyers to pay through the platform"
-                right={<Toggle checked={payments.enableOnline} onChange={(v) => setPayments({ ...payments, enableOnline: v })} />}
+                right={
+                  <Toggle
+                    checked={payments.enableOnline}
+                    onChange={(v) => setPayments({ ...payments, enableOnline: v })}
+                  />
+                }
               />
 
               <div className="pm-group">
@@ -454,7 +547,12 @@ export default function Settings() {
               <FieldRow
                 label="Charge Transaction Fees"
                 sub="Take a percentage of each sale"
-                right={<Toggle checked={payments.feesEnabled} onChange={(v) => setPayments({ ...payments, feesEnabled: v })} />}
+                right={
+                  <Toggle
+                    checked={payments.feesEnabled}
+                    onChange={(v) => setPayments({ ...payments, feesEnabled: v })}
+                  />
+                }
               />
               <FieldRow label="Platform Fee (%)">
                 <input
@@ -478,7 +576,7 @@ export default function Settings() {
             </section>
 
             <div className="savebar">
-              <button className="btn btn--primary">
+              <button className="btn btn--primary" disabled={saving} onClick={handleSave}>
                 <span className="ico-disk" />
                 Save Changes
               </button>
@@ -497,22 +595,46 @@ export default function Settings() {
               <FieldRow
                 label="New Listing Notifications"
                 sub="Notify admins when new listings are posted"
-                right={<Toggle checked={notif.email.newListing} onChange={(v) => setNotif({ ...notif, email: { ...notif.email, newListing: v } })} />}
+                right={
+                  <Toggle
+                    checked={notif.email.newListing}
+                    onChange={(v) => setNotif({ ...notif, email: { ...notif.email, newListing: v } })}
+                  />
+                }
               />
               <FieldRow
                 label="Sale Notifications"
                 sub="Notify sellers when items are marked as sold"
-                right={<Toggle checked={notif.email.sale} onChange={(v) => setNotif({ ...notif, email: { ...notif.email, sale: v } })} />}
+                right={
+                  <Toggle
+                    checked={notif.email.sale}
+                    onChange={(v) => setNotif({ ...notif, email: { ...notif.email, sale: v } })}
+                  />
+                }
               />
               <FieldRow
                 label="Review Reminders"
                 sub="Remind admins of pending listings to review"
-                right={<Toggle checked={notif.email.reviewReminders} onChange={(v) => setNotif({ ...notif, email: { ...notif.email, reviewReminders: v } })} />}
+                right={
+                  <Toggle
+                    checked={notif.email.reviewReminders}
+                    onChange={(v) =>
+                      setNotif({ ...notif, email: { ...notif.email, reviewReminders: v } })
+                    }
+                  />
+                }
               />
               <FieldRow
                 label="Weekly Reports"
                 sub="Send weekly marketplace performance reports"
-                right={<Toggle checked={notif.email.weeklyReports} onChange={(v) => setNotif({ ...notif, email: { ...notif.email, weeklyReports: v } })} />}
+                right={
+                  <Toggle
+                    checked={notif.email.weeklyReports}
+                    onChange={(v) =>
+                      setNotif({ ...notif, email: { ...notif.email, weeklyReports: v } })
+                    }
+                  />
+                }
               />
             </section>
 
@@ -525,27 +647,47 @@ export default function Settings() {
               <FieldRow
                 label="Listing Approved"
                 sub="Notify when their listing is approved"
-                right={<Toggle checked={notif.user.approved} onChange={(v) => setNotif({ ...notif, user: { ...notif.user, approved: v } })} />}
+                right={
+                  <Toggle
+                    checked={notif.user.approved}
+                    onChange={(v) => setNotif({ ...notif, user: { ...notif.user, approved: v } })}
+                  />
+                }
               />
               <FieldRow
                 label="Listing Rejected"
                 sub="Notify when their listing is rejected with reason"
-                right={<Toggle checked={notif.user.rejected} onChange={(v) => setNotif({ ...notif, user: { ...notif.user, rejected: v } })} />}
+                right={
+                  <Toggle
+                    checked={notif.user.rejected}
+                    onChange={(v) => setNotif({ ...notif, user: { ...notif.user, rejected: v } })}
+                  />
+                }
               />
               <FieldRow
                 label="New Message"
                 sub="Notify when they receive a message about their listing"
-                right={<Toggle checked={notif.user.newMessage} onChange={(v) => setNotif({ ...notif, user: { ...notif.user, newMessage: v } })} />}
+                right={
+                  <Toggle
+                    checked={notif.user.newMessage}
+                    onChange={(v) => setNotif({ ...notif, user: { ...notif.user, newMessage: v } })}
+                  />
+                }
               />
               <FieldRow
                 label="Price Drop Alerts"
                 sub="Notify interested buyers of price reductions"
-                right={<Toggle checked={notif.user.priceDrop} onChange={(v) => setNotif({ ...notif, user: { ...notif.user, priceDrop: v } })} />}
+                right={
+                  <Toggle
+                    checked={notif.user.priceDrop}
+                    onChange={(v) => setNotif({ ...notif, user: { ...notif.user, priceDrop: v } })}
+                  />
+                }
               />
             </section>
 
             <div className="savebar">
-              <button className="btn btn--primary">
+              <button className="btn btn--primary" disabled={saving} onClick={handleSave}>
                 <span className="ico-disk" />
                 Save Changes
               </button>
