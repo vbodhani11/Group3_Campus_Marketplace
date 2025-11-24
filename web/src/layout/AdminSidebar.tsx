@@ -95,6 +95,9 @@ export default function AdminSidebar({ open, onClose }: Props) {
             <NavLink to="/admin/manage-listings" onClick={closeOnClick} className="navitem"><span className="icon">📦</span>
               Listings
             </NavLink>
+            <NavLink to="/admin/manage-orders" onClick={closeOnClick} className="navitem"><span className="icon">🛍️</span>
+              Orders
+            </NavLink>
             <NavLink to="/admin/reports" onClick={closeOnClick} className="navitem"><span className="icon">🚩</span>
               Reports
             </NavLink>

@@ -14,6 +14,7 @@ import AdminLayout from "../layout/AdminLayout";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import ManageUsers from "../pages/admin/ManageUsers";
 import ManageListings from "../pages/admin/ManageListings";
+import ManageOrders from "../pages/admin/ManageOrders";
 import Analytics from "../pages/admin/Analytics";
 import Settings from "../pages/admin/Settings";
 import AdminProfile from "../pages/admin/AdminProfile";
@@ -48,6 +49,8 @@ export default function AppRoutes() {
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="manage-users" element={<ManageUsers />} />
         <Route path="manage-listings" element={<ManageListings />} />
+        <Route path="manage-orders" element={<ManageOrders />} /> 
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="settings" element={<Settings />} />
         <Route path="profile" element={<AdminProfile />} />
