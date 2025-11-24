@@ -12,7 +12,7 @@ export default function LandingPage() {
         <div className="overlay"></div>
         <div className="hero-content">
           <h1>Campus Marketplace</h1>
-          <p>Buy, Sell, and Swap: All Within Your Campus Community.</p>
+          <p>A Digital Hub for Campus Commerce</p>
           <div className="buttons">
             <button className="btn login" onClick={() => navigate("/login")}>Login</button>
             <button className="btn signup" onClick={() => navigate("/register")}>Sign Up</button>
