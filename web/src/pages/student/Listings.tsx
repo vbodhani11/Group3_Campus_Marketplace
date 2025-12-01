@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import ListingGrid from "../../components/ListingGrid";
 import type { Listing } from "../../lib/listings";
@@ -6,51 +6,79 @@ import "../../style/Listings.scss";
 import { useListings } from "../../lib/UseListing";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import { useRecentListings } from "../../lib/UseRecentLisings";
 
-type CategoryFilter = "all" | "electronics" | "books" | "furniture";
+type CategoryFilter = "all" | string;
 type SortOption = "relevance" | "price-asc" | "price-desc" | "newest";
 
 export default function ListingsPage() {
   const { listings, loading, error } = useListings();
+  const { recentListings } = useRecentListings();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [minPrice, setMinPrice] = useState<string>("");
-  const [maxPrice, setMaxPrice] = useState<string>("");
-  const [sortOption, setSortOption] = useState<SortOption>("relevance");
-
-  // Category from URL
+  const searchQuery = searchParams.get("q") ?? "";
   const categoryParam = searchParams.get("category");
+  const categoryFilter: CategoryFilter = categoryParam ?? "all";
+  const minPrice = searchParams.get("minPrice") ?? "";
+  const maxPrice = searchParams.get("maxPrice") ?? "";
+  const sortOption =
+    (searchParams.get("sort") as SortOption | null) ?? "relevance";
+  const viewMode = searchParams.get("view");
+  const showRecentOnly = viewMode === "recent";
 
-  const categoryFilter: CategoryFilter =
-    categoryParam === "electronics" ||
-    categoryParam === "books" ||
-    categoryParam === "furniture"
-      ? categoryParam
-      : "all";
+  function updateParams(updates: Record<string, string | null>) {
+    const next = new URLSearchParams(searchParams);
 
-  function updateCategoryFilter(next: CategoryFilter) {
-    const params = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === "") {
+        next.delete(key);
+      } else {
+        next.set(key, value);
+      }
+    });
 
-    if (next === "all") {
-      params.delete("category");
-    } else {
-      params.set("category", next);
-    }
-
-    setSearchParams(params);
+    setSearchParams(next);
   }
 
+  const handleSearchChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    updateParams({ q: e.target.value || null });
+  };
+
+  const updateCategoryFilter = (value: CategoryFilter) => {
+    updateParams({ category: value === "all" ? null : value });
+  };
+
+  const updatePriceRange = (field: "minPrice" | "maxPrice", value: string) => {
+    updateParams({ [field]: value || null });
+  };
+
+  const updateSortOption = (value: SortOption) => {
+    updateParams({ sort: value === "relevance" ? null : value });
+  };
+
+  // All categories that actually exist in the DB
+  const categories = useMemo(
+    () => Array.from(new Set(listings.map((l) => l.category))).sort(),
+    [listings]
+  );
+
+  // Core filtering + relevance metric
   const filteredAndSorted = useMemo(() => {
-    let result: Listing[] = [...listings];
+    const baseListings =
+      showRecentOnly && recentListings.length > 0 ? recentListings : listings;
+
+    let result: Listing[] = [...baseListings];
 
     // Text search: title + description
     if (searchQuery.trim() !== "") {
       const q = searchQuery.toLowerCase();
       result = result.filter((listing) => {
-        const titleMatch = listing.title.toLowerCase().includes(q);
-        const descMatch =
-          (listing.description ?? "").toLowerCase().includes(q);
+        const title = listing.title.toLowerCase();
+        const desc = (listing.description ?? "").toLowerCase();
+        const titleMatch = title.includes(q);
+        const descMatch = desc.includes(q);
         return titleMatch || descMatch;
       });
     }
@@ -71,6 +99,38 @@ export default function ListingsPage() {
       result = result.filter((listing) => listing.price <= max);
     }
 
+    const now = Date.now();
+
+    // Relevance score: query match + recency
+    function relevanceScore(listing: Listing): number {
+      let score = 0;
+
+      if (searchQuery.trim() !== "") {
+        const q = searchQuery.toLowerCase();
+        const title = listing.title.toLowerCase();
+        const desc = (listing.description ?? "").toLowerCase();
+
+        if (title.includes(q)) score += 5;
+        if (title.startsWith(q)) score += 2;
+        if (desc.includes(q)) score += 2;
+      }
+
+      // Recency boost: up to +1 for items ~0–30 days old
+      const createdAtMs = (listing as any).createdAt
+        ? new Date((listing as any).createdAt).getTime()
+        : 0;
+      const ageDays = createdAtMs
+        ? (now - createdAtMs) / (1000 * 60 * 60 * 24)
+        : Number.POSITIVE_INFINITY;
+      const recencyBoost =
+        ageDays === Number.POSITIVE_INFINITY
+          ? 0
+          : Math.max(0, 30 - ageDays) / 30;
+      score += recencyBoost;
+
+      return score;
+    }
+
     // Sorting
     switch (sortOption) {
       case "price-asc":
@@ -80,21 +140,27 @@ export default function ListingsPage() {
         result.sort((a, b) => b.price - a.price);
         break;
       case "newest":
-        result.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() -
-            new Date(a.createdAt).getTime()
-        );
+        result.sort((a, b) => {
+          const aTime = (a as any).createdAt
+            ? new Date((a as any).createdAt).getTime()
+            : 0;
+          const bTime = (b as any).createdAt
+            ? new Date((b as any).createdAt).getTime()
+            : 0;
+          return bTime - aTime;
+        });
         break;
       case "relevance":
       default:
-        // “Relevance” could be your default order or a future custom score
+        result.sort((a, b) => relevanceScore(b) - relevanceScore(a));
         break;
     }
 
     return result;
   }, [
     listings,
+    recentListings,
+    showRecentOnly,
     searchQuery,
     categoryFilter,
     minPrice,
@@ -103,149 +169,124 @@ export default function ListingsPage() {
   ]);
 
   return (
-    <> 
+    <>
       <Header />
       <div className="listings-page">
-        <div className="listings-page__layout">
+        <aside className="listings-page__sidebar">
+          <h2 className="listings-page__sidebar-title">Filters</h2>
 
-          {/* Sidebar Filters */}
-          <aside className="listings-page__sidebar">
-            <h2 className="listings-page__sidebar-title">Filters</h2>
+          <div className="listings-page__filter-group">
+            <label className="listings-page__filter-label" htmlFor="search">
+              Search
+            </label>
+            <input
+              id="search"
+              type="text"
+              className="listings-page__search-input"
+              placeholder="Search listings..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+            />
+          </div>
 
-            {/* Search */}
-            <div className="listings-page__filter-group">
-              <label className="listings-page__filter-label" htmlFor="search">
-                Search
+          <div className="listings-page__filter-group">
+            <span className="listings-page__filter-label">Category</span>
+            <div className="listings-page__filter-options">
+              <label className="listings-page__radio-option">
+                <input
+                  type="radio"
+                  name="category"
+                  value="all"
+                  checked={categoryFilter === "all"}
+                  onChange={() => updateCategoryFilter("all")}
+                />
+                <span>All</span>
               </label>
+
+              {categories.map((category) => (
+                <label
+                  key={category}
+                  className="listings-page__radio-option"
+                >
+                  <input
+                    type="radio"
+                    name="category"
+                    value={category}
+                    checked={categoryFilter === category}
+                    onChange={() => updateCategoryFilter(category)}
+                  />
+                  <span>
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="listings-page__filter-group">
+            <span className="listings-page__filter-label">Price range</span>
+            <div className="listings-page__price-range">
               <input
-                id="search"
-                type="text"
-                className="listings-page__search-input"
-                placeholder="Search listings..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                type="number"
+                className="listings-page__price-input"
+                placeholder="Min"
+                value={minPrice}
+                onChange={(e) => updatePriceRange("minPrice", e.target.value)}
+              />
+              <span className="listings-page__price-separator">–</span>
+              <input
+                type="number"
+                className="listings-page__price-input"
+                placeholder="Max"
+                value={maxPrice}
+                onChange={(e) => updatePriceRange("maxPrice", e.target.value)}
               />
             </div>
+          </div>
+        </aside>
 
-            {/* Category */ /*Also the following code is AI generated*/}
-            <div className="listings-page__filter-group">
-              <span className="listings-page__filter-label">Category</span>
-              <div className="listings-page__filter-options">
-                <label className="listings-page__radio-option">
-                  <input
-                    type="radio"
-                    name="category"
-                    value="all"
-                    checked={categoryFilter === "all"}
-                    onChange={() => updateCategoryFilter("all")}
-                  />
-                  <span>All</span>
-                </label>
-                <label className="listings-page__radio-option">
-                  <input
-                    type="radio"
-                    name="category"
-                    value="electronics"
-                    checked={categoryFilter === "electronics"}
-                    onChange={() => updateCategoryFilter("electronics")}
-                  />
-                  <span>Electronics</span>
-                </label>
-                <label className="listings-page__radio-option">
-                  <input
-                    type="radio"
-                    name="category"
-                    value="books"
-                    checked={categoryFilter === "books"}
-                    onChange={() => updateCategoryFilter("books")}
-                  />
-                  <span>Books</span>
-                </label>
-                <label className="listings-page__radio-option">
-                  <input
-                    type="radio"
-                    name="category"
-                    value="furniture"
-                    checked={categoryFilter === "furniture"}
-                    onChange={() => updateCategoryFilter("furniture")}
-                  />
-                  <span>Furniture</span>
-                </label>
-              </div>
+        <main className="listings-page__main">
+          <div className="listings-page__header">
+            <h1 className="listings-page__title">
+              {showRecentOnly ? "All Recently Viewed Items" : "All Listings"}
+            </h1>
+
+            <div className="listings-page__sort">
+              <label
+                className="listings-page__filter-label"
+                htmlFor="sort"
+              >
+                Sort by
+              </label>
+              <select
+                id="sort"
+                className="listings-page__sort-select"
+                value={sortOption}
+                onChange={(e) =>
+                  updateSortOption(e.target.value as SortOption)
+                }
+              >
+                <option value="relevance">Relevance</option>
+                <option value="price-asc">Price: low to high</option>
+                <option value="price-desc">Price: high to low</option>
+                <option value="newest">Newest</option>
+              </select>
             </div>
+          </div>
 
-            {/* Price range */}
-            <div className="listings-page__filter-group">
-              <span className="listings-page__filter-label">Price</span>
-              <div className="listings-page__price-range">
-                <input
-                  type="number"
-                  className="listings-page__price-input"
-                  placeholder="Min"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
-                />
-                <span className="listings-page__price-separator">–</span>
-                <input
-                  type="number"
-                  className="listings-page__price-input"
-                  placeholder="Max"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                />
-              </div>
-            </div>
-          </aside>
-
-          {/* Main content: sort bar + grid */}
-          <main className="listings-page__content">
-            <div className="listings-page__toolbar">
-              <div className="listings-page__results-count">
-                {loading && "Loading..."}
-                {error && !loading && `Error: ${error}`}
-                {!loading && !error && (
-                  <>
-                    {filteredAndSorted.length} result
-                    {filteredAndSorted.length === 1 ? "" : "s"}
-                  </>
-                )}
-              </div>
-
-              {/* Sorting*/ /*TODO: this is broken now and I don't know why */}
-              <div className="listings-page__sort">
-                <label
-                  className="listings-page__sort-label"
-                  htmlFor="sort-select"
-                >
-                  Sort by:
-                </label>
-                <select
-                  id="sort-select"
-                  className="listings-page__sort-select"
-                  value={sortOption}
-                  onChange={(e) =>
-                    setSortOption(e.target.value as SortOption)
-                  }
-                >
-                  <option value="relevance">Relevance</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="newest">Newest</option>
-                </select>
-              </div>
-            </div>
-
-            {!loading && !error && filteredAndSorted.length > 0 && (
-              <ListingGrid listings={filteredAndSorted} />
-            )}
-
-            {!loading && !error && filteredAndSorted.length === 0 && (
-              <div className="listings-page__empty-state">
-                No listings match your filters.
-              </div>
-            )}
-          </main>
-        </div>
+          {loading && <p className="listings-page__status">Loading...</p>}
+          {error && (
+            <p className="listings-page__status listings-page__status--error">
+              {error}
+            </p>
+          )}
+          {!loading && !error && filteredAndSorted.length === 0 && (
+            <p className="listings-page__status">No listings found.</p>
+          )}
+          {!loading && !error && filteredAndSorted.length > 0 && (
+            <ListingGrid listings={filteredAndSorted} />
+          )}
+        </main>
       </div>
       <Footer />
     </>
