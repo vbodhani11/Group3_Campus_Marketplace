@@ -53,7 +53,7 @@ export default function StudentProduct() {
           <p className="sp-desc">{product.description}</p>
 
           <div className="actions">
-              <button className="btn primary">Add to Cart</button>
+              <button className="btn primary" onClick={handleAddToCart}>Add to Cart</button>
               <Link to="/student/messages" className="btn ghost">
                 Message Seller
               </Link>
