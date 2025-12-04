@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
-import "../../style/StudentProduct.scss";
+import "../../style/studentproduct.scss";
 import { Link } from "lucide-react";
 
 export default function StudentProduct() {

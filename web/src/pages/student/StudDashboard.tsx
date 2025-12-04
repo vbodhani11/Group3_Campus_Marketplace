@@ -2,7 +2,7 @@ import DashboardSection from "../../components/DashboardSection";
 import { useListings } from "../../lib/UseListing";
 import type { Listing } from "../../lib/listings";
 import { useNavigate } from "react-router-dom";
-import "../../style/Dashboard.scss";
+import "../../style/dashboard.scss";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { useRecentListings } from "../../lib/UseRecentLisings";
