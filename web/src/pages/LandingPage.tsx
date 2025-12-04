@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import "../style/landing.scss";
+import "../style/Landing.scss";
 import Footer from "../components/Footer";
 import FeatureCard from "../components/FeatureCard";
 
