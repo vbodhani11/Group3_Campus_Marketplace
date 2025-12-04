@@ -5,6 +5,12 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
-    "jsx": "react-jsx"
-  }
+    "jsx": "react-jsx",
+    "strict": true,
+    "types": ["cypress"]
+  },
+  "include": [
+    "src",
+    "cypress"
+  ]
 }

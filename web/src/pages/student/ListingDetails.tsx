@@ -1,14 +1,22 @@
 /* THIS IS A TEMP AI GENERATED FILE */
-
+import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useListings } from "../../lib/UseListing";
 import type { Listing } from "../../lib/listings";
+import { addRecentListing } from "../../lib/RecentViews";
+
 
 export default function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { listings, loading, error } = useListings();
 
   const listing: Listing | undefined = listings.find((l) => l.id === id);
+
+  useEffect(() => {
+    if (listing) {
+      addRecentListing(listing.id);
+    }
+  }, [listing]);
 
   if (loading) {
     return <div>Loading listing…</div>;

@@ -1,70 +1,93 @@
 import DashboardSection from "../../components/DashboardSection";
 import { useListings } from "../../lib/UseListing";
 import type { Listing } from "../../lib/listings";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import "../../style/Dashboard.scss";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import { useRecentListings } from "../../lib/UseRecentLisings";
 
 export default function DashboardPage() {
   const { listings, loading, error } = useListings();
+  const { recentListings } = useRecentListings();
   const navigate = useNavigate();
 
-  const electronics: Listing[] = listings.filter(
-    (l) => l.category === "electronics"
-  );
-  const books: Listing[] = listings.filter((l) => l.category === "books");
-  const furniture: Listing[] = listings.filter(
-    (l) => l.category === "furniture"
-  );
+  const recommended: Listing[] = listings.slice(0, 8);
 
-  const recommended: Listing[] = [...listings]
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-    .slice(0, 4);
+  const categories = Array.from(
+    new Set(listings.map((l) => l.category))
+  ).sort();
+
+  function getCategoryTitle(category: string): string {
+    switch (category) {
+      case "electronics":
+        return "Popular Electronics";
+      case "books":
+        return "Books & Textbooks";
+      case "furniture":
+        return "Dorm Essentials";
+      default:
+        return category.charAt(0).toUpperCase() + category.slice(1);
+    }
+  }
 
   return (
     <>
-    <Header />
-    <div className="dashboard-page">
-      <header className="dashboard-page__header">
-        <div className="dashboard-page__header-content">
-          <h1 className="dashboard-page__title">Campus Marketplace</h1>
-          <p className="dashboard-page__subtitle">
-            Quick glance at what’s new and relevant for you.
-          </p>
-        </div>
-      </header>
+      <Header />
+      <div className="dashboard-page">
+        <main className="dashboard-page__main">
+          {loading && (
+            <p className="dashboard-page__status">Loading listings...</p>
+          )}
+          {error && (
+            <p className="dashboard-page__status dashboard-page__status--error">
+              {error}
+            </p>
+          )}
 
-      <main className="dashboard-page__sections">
-        <DashboardSection
-          title="Recommended for you"
-          listings={recommended}
-          onSeeAll={() => navigate("/listings")}
-        />
+          {!loading && !error && (
+            <>
+              {recentListings.length > 0 && (
+                <DashboardSection
+                  title="Recently viewed"
+                  listings={recentListings}
+                  onSeeAll={() => navigate("/listings?view=recent")}
+                />
+              )}
 
-        <DashboardSection
-          title="Popular Electronics"
-          listings={electronics}
-          onSeeAll={() => navigate("/listings?category=electronics")}
-        />
+              {recommended.length > 0 && (
+                <DashboardSection
+                  title="Recommended for you"
+                  listings={recommended}
+                  onSeeAll={() => navigate("/listings")}
+                />
+              )}
 
-        <DashboardSection
-          title="Books & Textbooks"
-          listings={books}
-          onSeeAll={() => navigate("/listings?category=books")}
-        />
+              {categories.map((category) => {
+                const categoryListings = listings
+                  .filter((l) => l.category === category)
+                  .slice(0, 4);
 
-        <DashboardSection
-          title="Dorm Essentials"
-          listings={furniture}
-          onSeeAll={() => navigate("/listings?category=furniture")}
-        />
-      </main>
-    </div>
-    <Footer />
+                if (categoryListings.length === 0) return null;
+
+                return (
+                  <DashboardSection
+                    key={category}
+                    title={getCategoryTitle(category)}
+                    listings={categoryListings}
+                    onSeeAll={() =>
+                      navigate(
+                        `/listings?category=${encodeURIComponent(category)}`
+                      )
+                    }
+                  />
+                );
+              })}
+            </>
+          )}
+        </main>
+      </div>
+      <Footer />
     </>
   );
 }

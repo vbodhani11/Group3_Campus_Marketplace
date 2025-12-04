@@ -198,6 +198,7 @@ export default function Login() {
         <div className="role-tabs">
           <button
             className={role === "student" ? "active" : ""}
+            data-testid="role-student"
             onClick={() => setRole("student")}
             type="button"
           >
@@ -205,6 +206,7 @@ export default function Login() {
           </button>
           <button
             className={role === "admin" ? "active" : ""}
+            data-testid="role-admin"
             onClick={() => setRole("admin")}
             type="button"
           >
@@ -217,6 +219,7 @@ export default function Login() {
         <form onSubmit={handleLogin}>
           <label>Email Address *</label>
           <input
+            data-testid="login-email"
             type="email"
             placeholder="Enter your email"
             value={email}
@@ -227,6 +230,7 @@ export default function Login() {
 
           <label>Password *</label>
           <input
+            data-testid="login-password"
             type="password"
             placeholder="Enter your password"
             value={password}
@@ -242,10 +246,16 @@ export default function Login() {
             Forgot Password?
           </p>
 
-          <button type="submit" className="login-btn" disabled={submitting}>
+          <button
+            type="submit"
+            className="login-btn"
+            data-testid="login-submit"
+            disabled={submitting}
+          >
             {submitting ? "Logging in..." : "Log In"}
           </button>
         </form>
+
 
         <div className="divider">OR</div>
 

@@ -130,6 +130,7 @@ export default function Register() {
             placeholder="Enter your full name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            data-testid="register-name"
             required
           />
 
@@ -139,6 +140,7 @@ export default function Register() {
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            data-testid="register-email"
             required
           />
 
@@ -148,6 +150,7 @@ export default function Register() {
             placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            data-testid="register-password"
             required
           />
 
@@ -157,12 +160,19 @@ export default function Register() {
             placeholder="Re-enter your password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
+            data-testid="register-confirm"
             required
           />
 
-          <button type="submit" className="register-btn" disabled={submitting}>
+          <button
+            type="submit"
+            className="register-btn"
+            data-testid="register-submit"
+            disabled={submitting}
+          >
             {submitting ? "Signing up..." : "Sign Up"}
           </button>
+
         </form>
 
         <div className="divider">OR</div>
