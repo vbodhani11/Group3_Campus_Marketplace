@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
-import "../../style/Login.scss";
+import "../../style/login.scss";
 
 type Role = "student" | "admin";
 
