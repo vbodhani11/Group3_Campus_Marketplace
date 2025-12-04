@@ -1,0 +1,33 @@
+export type ListingCategory = "electronics" | "books" | "furniture" | "other";
+export type Listing = {
+    id: string;
+    title: string;
+    price: number;
+    category: ListingCategory;
+    imageUrl?: string;
+    description?: string;
+    createdAt: string;
+};
+export type ListingRow = {
+    id: string;
+    product_id: string;
+    category: string;
+    title: string;
+    description: string | null;
+    condition: string;
+    status: string;
+    price: string;
+    currency: string;
+    quantity: number;
+    is_negotiable: boolean;
+    image_urls: string[] | null;
+    thumbnail_url: string | null;
+    tags: string[] | null;
+    location_text: string | null;
+    shipping_available: boolean;
+    shipping_cost: string | null;
+    views_count: number;
+    favorites_count: number;
+    created_at: string;
+};
+export declare function mapListingRowToListing(row: ListingRow): Listing;
