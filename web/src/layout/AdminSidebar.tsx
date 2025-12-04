@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import "../style/AdminSidebar.scss";
+import "../style/adminsidebar.scss";
 import { supabase } from "../lib/supabaseClient";
 
 type Props = {
