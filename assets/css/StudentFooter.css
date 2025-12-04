@@ -1,0 +1,49 @@
+.student-footer {
+  --bg: #151515;
+  --text: #0d0a0a;
+  --muted: #0a0808;
+  --sep: #0b0909;
+  width: 100%;
+  background: #d4b483;
+  border-bottom: 1px solid #d4b483;
+}
+.student-footer .sf-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px 16px;
+  text-align: center;
+  display: grid;
+  gap: 6px;
+}
+.student-footer .sf-line {
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  display: inline-flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+.student-footer .sf-line .sep {
+  color: var(--sep);
+  font-weight: 700;
+  margin: 0 2px;
+}
+.student-footer .sf-line.small {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 14px;
+}
+@media (max-width: 520px) {
+  .student-footer .sf-inner {
+    padding: 16px 12px;
+    gap: 4px;
+  }
+  .student-footer .sf-line {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .student-footer .sf-line.small {
+    font-size: 13px;
+  }
+}/*# sourceMappingURL=StudentFooter.css.map */
