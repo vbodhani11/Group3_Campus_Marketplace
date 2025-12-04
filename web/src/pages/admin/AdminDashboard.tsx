@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import "../../style/AdminDashboard.scss";
+import "../../style/admindashboard.scss";
 
 type NotificationStatus = "active" | "warning" | "error";
 

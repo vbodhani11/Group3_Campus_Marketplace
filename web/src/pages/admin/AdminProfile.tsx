@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "../../style/AdminProfile.scss";
+import "../../style/adminprofile.scss";
 // import { supabase } from "../../lib/supabaseClient";
 
 export default function AdminProfile() {

@@ -1,5 +1,5 @@
 import { useCart } from "../../context/CartContext";
-import "../../style/StudentCart.scss";
+import "../../style/studentcart.scss";
 
 export default function StudentCart() {
   const { cart, removeFromCart, clearCart } = useCart();

@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 import AdminHeader from "./AdminHeader";
 import AdminSidebar from "./AdminSidebar";
 import AdminFooter from "./AdminFooter";
-import "../style/AdminLayout.scss";
+import "../style/adminlayout.scss";
 
 export default function AdminLayout() {
   const [open, setOpen] = useState(false);

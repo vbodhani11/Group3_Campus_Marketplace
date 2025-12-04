@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "../../style/StudentMessages.scss";
+import "../../style/studentmessages.scss";
 
 interface Message {
   id: number;

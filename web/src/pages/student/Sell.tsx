@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "../../style/StudentSell.scss";
+import "../../style/studentsell.scss";
 
 export default function StudentSell() {
   const [title, setTitle] = useState("");
