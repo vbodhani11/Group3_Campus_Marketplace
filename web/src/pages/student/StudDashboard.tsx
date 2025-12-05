@@ -51,7 +51,7 @@ export default function DashboardPage() {
                 <DashboardSection
                   title="Recently viewed"
                   listings={recentListings}
-                  onSeeAll={() => navigate("/listings?view=recent")}
+                  onSeeAll={() => navigate("/student/listings?view=recent")}
                 />
               )}
 
@@ -59,7 +59,7 @@ export default function DashboardPage() {
                 <DashboardSection
                   title="Recommended for you"
                   listings={recommended}
-                  onSeeAll={() => navigate("/listings")}
+                  onSeeAll={() => navigate("/student/listings")}
                 />
               )}
 
@@ -77,7 +77,7 @@ export default function DashboardPage() {
                     listings={categoryListings}
                     onSeeAll={() =>
                       navigate(
-                        `/listings?category=${encodeURIComponent(category)}`
+                        `/student/listings?category=${encodeURIComponent(category)}`
                       )
                     }
                   />
@@ -87,7 +87,7 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
-      <Footer />
+    
     </>
   );
 }
