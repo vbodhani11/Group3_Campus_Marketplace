@@ -22,10 +22,10 @@ const StudentSell = () => {
   const [description, setDescription] = useState("");
 
   // UPDATED: status is always "pending"
-  const [status] = useState("pending");
+  //const [status] = useState("pending");
 
   // UPDATED: currency is always "USD"
-  const [currency] = useState("USD");
+  //const [currency] = useState("USD");
 
   const [condition, setCondition] = useState("");
   const [price, setPrice] = useState("");
