@@ -4,21 +4,13 @@ import "../../style/StudentCart.scss";
 
 /*
 type CartItem = {
-  id: number;
-  image: string | undefined; // Remove 'null' from the type
-  title: string;
-  price: number;
-};
-*/
-
-type CartItem = {
   id: string;               // the Supabase listing UUID
   image?: string;
   title: string;
   price: number;
   seller_id: string;        // optional but useful for seller dashboard
 };
-
+*/
 
 export default function StudentCart() {
   const { cart, removeFromCart, clearCart } = useCart();

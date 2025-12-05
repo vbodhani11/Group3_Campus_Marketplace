@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useCart } from "../../context/CartContext";
 import "../../style/StudentProduct.scss";
-import { getUser } from "../../lib/auth";
+//import { getUser } from "../../lib/auth";
 
 // ADD THIS IMPORT
 import StudentReportModal from "../../components/StudentReportModal";
@@ -220,22 +220,12 @@ export default function StudentProduct() {
         </div>
       </div>
 
-      {/* REPORT MODAL */}
-      {/*
-      {showReport && (
-        <StudentReportModal
-          listing={listing}
-          onClose={() => setShowReport(false)}
-        />
-      )}
-      */}
-
 {showReport && (
   <StudentReportModal
     listing={{
       id: listing.id,
-      seller_id: listing.seller_id ?? "",   // FIX: cannot be null
-      reportType: "listing"                 // REQUIRED
+      seller_id: listing.seller_id ?? "",   
+      reportType: "listing"                 
     }}
     onClose={() => setShowReport(false)}
   />

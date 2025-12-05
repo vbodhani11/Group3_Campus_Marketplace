@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../style/StudentCheckout.scss";
+//import { sendNotificationToUser } from "../../lib/notifications";
 
 import { supabase } from "../../lib/supabaseClient";
 import { useCart } from "../../context/CartContext";
@@ -86,28 +87,8 @@ export default function StudentCheckoutSuccess() {
 
       console.log("ORDER CREATED:", order);
 
-      // ---------------------------
-      // 3. Mark purchased listings as PENDING
-      // ---------------------------
-      /*
-      try {
-        await Promise.all(
-          cart.map((item) =>
-            supabase
-              .from("listings")
-              .update({
-                status: "pending",
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", item.id)
-          )
-        );
-      } catch (err) {
-        console.error("LISTING UPDATE FAILED:", err);
-      }
-        */
 
-      // 3. Mark listings as PENDING
+      // 3. Mark listings as sold
 try {
   for (const item of cart) {
 
@@ -136,7 +117,6 @@ try {
 } catch (err) {
   console.error("LISTING UPDATE FAILED:", err);
 }
-
 
       // ---------------------------
       // 4. Notify BUYER

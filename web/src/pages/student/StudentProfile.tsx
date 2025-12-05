@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "../../style/StudentProfile.scss";
 import { supabase } from "../../lib/supabaseClient";
-import { getResolvedUser } from "../../lib/resolvedUser";   // <-- FIX
+import { getResolvedUser } from "../../lib/resolvedUser";
 import { signOut } from "../../lib/auth";
 
 export default function StudentProfile() {
@@ -19,9 +19,9 @@ export default function StudentProfile() {
   const [newPassword, setNewPassword] = useState("");
   const [pwMessage, setPwMessage] = useState("");
 
-  // --------------------------------------------------------
-  // Load correct user (resolved user works everywhere)
-  // --------------------------------------------------------
+  // ------------------------------------------
+  // Load correct user via resolvedUser
+  // ------------------------------------------
   useEffect(() => {
     async function loadUser() {
       const user = await getResolvedUser();
@@ -30,9 +30,9 @@ export default function StudentProfile() {
     loadUser();
   }, []);
 
-  // --------------------------------------------------------
-  // Load profile + listings when authUser becomes available
-  // --------------------------------------------------------
+  // ------------------------------------------
+  // Load profile and listings
+  // ------------------------------------------
   useEffect(() => {
     if (!authUser || !authUser.auth_user_id) return;
 
@@ -64,9 +64,9 @@ export default function StudentProfile() {
     loadListings();
   }, [authUser]);
 
-  // --------------------------------------------------------
-  // Avatar upload
-  // --------------------------------------------------------
+  // ------------------------------------------
+  // Upload avatar
+  // ------------------------------------------
   const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !authUser) return;
@@ -90,9 +90,9 @@ export default function StudentProfile() {
     }
   };
 
-  // --------------------------------------------------------
-  // Save profile changes
-  // --------------------------------------------------------
+  // ------------------------------------------
+  // Save profile changes (RLS compatible)
+  // ------------------------------------------
   const onSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authUser) return;
@@ -105,38 +105,59 @@ export default function StudentProfile() {
         full_name: fullName,
         avatar_url: avatarPreview,
       })
-      .eq("auth_user_id", authUser.auth_user_id);
+      .eq("auth_user_id", authUser.auth_user_id)
+      .select()            
+      .single();
 
     setSaving(false);
 
-    if (error) alert("Failed to update profile");
-    else alert("Profile updated");
+    if (error) {
+      alert("Failed to update profile");
+    } else {
+      alert("Profile updated");
+    }
   };
 
-  // --------------------------------------------------------
-  // Change password (mock localStorage auth)
-  // --------------------------------------------------------
-  const onChangePassword = (e: React.FormEvent) => {
+  // ------------------------------------------
+  // Change Password (DB + localStorage)
+  // ------------------------------------------
+  const onChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!authUser) return;
+
     if (newPassword.length < 6) {
       setPwMessage("Password must be at least 6 characters");
       return;
     }
 
-    const updated = { ...authUser, password: newPassword };
-    localStorage.setItem("cm_user", JSON.stringify(updated));
+    const { error } = await supabase
+      .from("users")
+      .update({ password: newPassword })
+      .eq("auth_user_id", authUser.auth_user_id)
+      .select()
+      .single();
+
+    if (error) {
+      setPwMessage("Password update failed");
+      return;
+    }
+
+    // update local session
+    localStorage.setItem(
+      "cm_user",
+      JSON.stringify({ ...authUser, password: newPassword })
+    );
 
     setPwMessage("Password updated successfully");
     setNewPassword("");
   };
 
-  // --------------------------------------------------------
-  // Deactivate account
-  // --------------------------------------------------------
+  // ------------------------------------------
+  // Deactivate account (RLS safe)
+  // ------------------------------------------
   const onDeactivate = async () => {
     if (!authUser) return;
+
     const yes = confirm("Are you sure?");
     if (!yes) return;
 
@@ -147,16 +168,17 @@ export default function StudentProfile() {
         status: "inactive",
         deleted_at: new Date().toISOString(),
       })
-      .eq("auth_user_id", authUser.auth_user_id);
+      .eq("auth_user_id", authUser.auth_user_id)
+      .select()
+      .single();
 
     signOut();
     window.location.href = "/";
   };
 
-  // --------------------------------------------------------
+  // ------------------------------------------
   // Render
-  // --------------------------------------------------------
-
+  // ------------------------------------------
   if (!authUser)
     return <p style={{ padding: 20 }}>Loading profile...</p>;
 
@@ -164,22 +186,35 @@ export default function StudentProfile() {
     <section className="student-profile">
       <div className="card">
 
-        {/* Tabs */}
-        <div className="tabs">
-          <button
-            className={`tab ${tab === "profile" ? "is-active" : ""}`}
-            onClick={() => setTab("profile")}
-          >
-            Profile
-          </button>
+<div className="tabs-row">
+  <div className="tabs">
+    <button
+      className={`tab ${tab === "profile" ? "is-active" : ""}`}
+      onClick={() => setTab("profile")}
+    >
+      Profile
+    </button>
 
-          <button
-            className={`tab ${tab === "settings" ? "is-active" : ""}`}
-            onClick={() => setTab("settings")}
-          >
-            Settings
-          </button>
-        </div>
+    <button
+      className={`tab ${tab === "settings" ? "is-active" : ""}`}
+      onClick={() => setTab("settings")}
+    >
+      Settings
+    </button>
+  </div>
+
+  <button
+    className="logout-btn"
+    onClick={() => {
+      signOut();
+      supabase.auth.signOut();
+      window.location.href = "/login";
+    }}
+  >
+    Logout
+  </button>
+</div>
+
 
         {/* PROFILE TAB */}
         {tab === "profile" && (
