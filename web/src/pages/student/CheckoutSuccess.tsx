@@ -125,7 +125,7 @@ try {
         updated_at: new Date().toISOString(),
       })
       .eq("id", item.id)
-      .select();
+      //.select();
 
     if (error) {
       console.error("LISTING UPDATE ERROR:", error);

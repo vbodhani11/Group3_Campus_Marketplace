@@ -103,3 +103,10 @@ For Stripe errors:
 Check browser console + Supabase logs:
 Supabase Dashboard → Logs → Edge Functions
 Stripe Dashboard → Developers → Logs
+
+## 10. Test Data
+
+Card Number : 4242 4242 4242 4242
+Expiry : 12/34
+CVV : 567
+Name and Zip Code can be anything

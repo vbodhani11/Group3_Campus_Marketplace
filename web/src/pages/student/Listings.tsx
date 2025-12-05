@@ -288,7 +288,7 @@ export default function ListingsPage() {
           )}
         </main>
       </div>
-      <Footer />
+      
     </>
   );
 }
