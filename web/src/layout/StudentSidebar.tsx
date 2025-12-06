@@ -104,6 +104,12 @@ export default function StudentSidebar({ open, onClose }: Props) {
             <NavLink to="/student/Orders" onClick={closeOnClick} className="navitem">
               My Orders
             </NavLink>
+            <NavLink to="/student/SellerOrders" onClick={closeOnClick} className="navitem">
+              Seller Orders
+            </NavLink>
+            <NavLink to="/student/MyListings" onClick={closeOnClick} className="navitem">
+              My Listings
+            </NavLink>
           </nav>
         </div>
 
