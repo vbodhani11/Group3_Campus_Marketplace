@@ -1,7 +1,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import "../../style/AdminDashboard.scss";
+import "../../style/admindashboard.scss";
 export default function AdminDashboard() {
     const [totalUsers, setTotalUsers] = useState(null);
     const [totalPosts, setTotalPosts] = useState(null);
@@ -72,8 +72,7 @@ export default function AdminDashboard() {
             const { data: notifData, error: notifError } = await supabase
                 .from("notifications")
                 .select("*")
-                .order("created_at", { ascending: false })
-                .limit(4);
+                .order("created_at", { ascending: false });
             if (!notifError && notifData) {
                 setNotifications(notifData.map((n) => ({
                     id: n.id,
